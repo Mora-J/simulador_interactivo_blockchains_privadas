@@ -1,0 +1,2089 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Presentación | Blockchains Privadas: Quorum e Hyperledger Fabric</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --navy: #0B2532;
+      --amber: #F2C200;
+      --steel: #6E91AA;
+      --smoke: #F1F2F4;
+      --white: #FFFFFF;
+      --border-light: rgba(11, 37, 50, 0.12);
+      --slide-scale: 1;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      font-family: 'Space Grotesk', sans-serif;
+      background-color: #06151D;
+      color: var(--navy);
+      user-select: none;
+    }
+
+    /* Escenario principal que centra y escala la diapositiva al monitor */
+    .presentation-stage {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* Lienzo base de cada diapositiva (1280x720 HD 16:9) */
+    .slide {
+      width: 1280px;
+      height: 720px;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%) scale(var(--slide-scale));
+      transform-origin: center center;
+      overflow: hidden;
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 44px 60px 36px 60px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+      user-select: text;
+    }
+
+    .slide.active {
+      display: flex;
+      animation: slideFade 0.2s ease-out;
+    }
+
+    @keyframes slideFade {
+      from { opacity: 0.75; }
+      to { opacity: 1; }
+    }
+
+    .slide.slide-wide-diagram {
+      padding: 32px 38px 26px 38px;
+    }
+
+    /* Variantes de fondo: Oscuro (solo Portada y Conclusiones) y Claro (resto) */
+    .slide-dark {
+      background-color: var(--navy);
+      color: var(--smoke);
+    }
+
+    .slide-light {
+      background-color: var(--smoke);
+      color: var(--navy);
+    }
+
+    /* Patrón lineal de marca de agua (Brandbook) */
+    .watermark {
+      position: absolute;
+      right: -40px;
+      bottom: -40px;
+      width: 430px;
+      height: 430px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .slide-light .watermark path {
+      stroke: var(--navy);
+      opacity: 0.05;
+    }
+
+    .slide-dark .watermark path {
+      stroke: var(--amber);
+      opacity: 0.08;
+    }
+
+    /* Patrón modular de barras verticales escalonadas (Brandbook) */
+    .modular-bars {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .modular-bars span {
+      display: block;
+      width: 6px;
+      height: 26px;
+      border-radius: 2px;
+    }
+
+    .modular-bars span:nth-child(odd) {
+      background-color: var(--amber);
+      transform: translateY(-3px);
+    }
+
+    .modular-bars span:nth-child(even) {
+      background-color: var(--navy);
+      transform: translateY(3px);
+    }
+
+    .slide-dark .modular-bars span:nth-child(even) {
+      background-color: var(--steel);
+    }
+
+    /* Encabezado superior de diapositiva */
+    .slide-header {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2px solid var(--border-light);
+      padding-bottom: 14px;
+      margin-bottom: 18px;
+      flex-shrink: 0;
+      padding-right: 175px;
+    }
+
+    .slide-wide-diagram .slide-header {
+      padding-bottom: 10px;
+      margin-bottom: 12px;
+    }
+
+    .slide-dark .slide-header {
+      border-bottom-color: rgba(241, 242, 244, 0.15);
+    }
+
+    .eyebrow {
+      display: inline-block;
+      font-size: 12.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.7px;
+      padding: 4px 12px;
+      border-radius: 4px;
+      margin-bottom: 7px;
+    }
+
+    .slide-wide-diagram .eyebrow {
+      margin-bottom: 5px;
+      font-size: 11.5px;
+    }
+
+    .slide-light .eyebrow {
+      background-color: var(--navy);
+      color: var(--amber);
+    }
+
+    .slide-dark .eyebrow {
+      background-color: var(--amber);
+      color: var(--navy);
+    }
+
+    .slide-title {
+      font-size: 31px;
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: -0.5px;
+    }
+
+    .slide-wide-diagram .slide-title {
+      font-size: 28px;
+    }
+
+    .slide-dark .slide-title {
+      color: var(--white);
+    }
+
+    /* Cuerpo principal */
+    .slide-body {
+      position: relative;
+      z-index: 2;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    /* Pie de diapositiva */
+    .slide-footer {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-light);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--steel);
+      flex-shrink: 0;
+    }
+
+    .slide-wide-diagram .slide-footer {
+      padding-top: 9px;
+      margin-top: 9px;
+    }
+
+    .slide-dark .slide-footer {
+      border-top-color: rgba(241, 242, 244, 0.14);
+      color: var(--steel);
+    }
+
+    .slide-num {
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 4px;
+    }
+
+    .slide-light .slide-num {
+      background-color: var(--white);
+      color: var(--navy);
+      border: 1px solid var(--border-light);
+    }
+
+    .slide-dark .slide-num {
+      background-color: rgba(255, 255, 255, 0.08);
+      color: var(--amber);
+    }
+
+    /* Tipografía y tarjetas de contenido */
+    .lead-text {
+      font-size: 18px;
+      line-height: 1.48;
+      margin-bottom: 18px;
+      color: var(--navy);
+    }
+
+    .section-label {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-label::before {
+      content: "";
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      background-color: var(--amber);
+    }
+
+    .cards-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .cards-grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+
+    .card {
+      background-color: var(--white);
+      border: 1px solid var(--border-light);
+      border-top: 5px solid var(--amber);
+      border-radius: 10px;
+      padding: 22px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 4px 12px rgba(11, 37, 50, 0.04);
+    }
+
+    .card-navy-top { border-top-color: var(--navy); }
+    .card-steel-top { border-top-color: var(--steel); }
+
+    .card-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 34px;
+      width: fit-content;
+      padding: 0 8px;
+      height: 34px;
+      border-radius: 6px;
+      background-color: var(--navy);
+      color: var(--amber);
+      font-weight: 700;
+      font-size: 15px;
+      margin-bottom: 2px;
+    }
+
+    .card h3 {
+      font-size: 19px;
+      font-weight: 700;
+      color: var(--navy);
+      line-height: 1.25;
+    }
+
+    .card p {
+      font-size: 15.8px;
+      line-height: 1.46;
+      color: #243B47;
+    }
+
+    .callout-box {
+      background-color: var(--white);
+      border-left: 6px solid var(--amber);
+      border-radius: 8px;
+      padding: 16px 22px;
+      margin-bottom: 16px;
+      font-size: 17px;
+      line-height: 1.46;
+      box-shadow: 0 3px 10px rgba(11, 37, 50, 0.04);
+    }
+
+    .callout-box.steel {
+      border-left-color: var(--steel);
+      margin-bottom: 0;
+      margin-top: 16px;
+      background-color: #E7EDF1;
+    }
+
+    .steps-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .step-item {
+      background-color: var(--white);
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .step-badge {
+      min-width: 34px;
+      height: 34px;
+      border-radius: 6px;
+      background-color: var(--amber);
+      color: var(--navy);
+      font-weight: 700;
+      font-size: 17px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 2px;
+    }
+
+    .step-content {
+      font-size: 17px;
+      line-height: 1.45;
+      color: #1D3542;
+    }
+
+    /* Diagramas horizontales (Slides 6, 7, 15) */
+    .diagram-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      height: 100%;
+      min-height: 0;
+    }
+
+    .diagram-frame {
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+      background-color: var(--white);
+      border: 1px solid var(--border-light);
+      border-radius: 12px;
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      box-shadow: 0 4px 14px rgba(11, 37, 50, 0.05);
+    }
+
+    .diagram-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    .support-note {
+      background-color: var(--white);
+      border-left: 6px solid var(--amber);
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 15px;
+      line-height: 1.38;
+      color: var(--navy);
+      box-shadow: 0 3px 10px rgba(11, 37, 50, 0.04);
+      flex-shrink: 0;
+    }
+
+    /* Diagrama vertical (Slide 13) */
+    .vertical-slide-grid {
+      display: grid;
+      grid-template-columns: 0.92fr 1.08fr;
+      gap: 28px;
+      height: 100%;
+      min-height: 0;
+      align-items: stretch;
+    }
+
+    .vertical-info-col {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 0;
+      padding: 4px 0;
+    }
+
+    .vertical-header-block {
+      border-bottom: 2px solid var(--border-light);
+      padding-bottom: 14px;
+      margin-bottom: 14px;
+    }
+
+    .vertical-top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .vertical-title {
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1.16;
+      letter-spacing: -0.4px;
+      color: var(--navy);
+    }
+
+    .vertical-roles-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .mini-role-card {
+      background-color: var(--white);
+      border: 1px solid var(--border-light);
+      border-left: 5px solid var(--amber);
+      border-radius: 8px;
+      padding: 11px 15px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      box-shadow: 0 2px 8px rgba(11, 37, 50, 0.03);
+    }
+
+    .mini-role-card.navy { border-left-color: var(--navy); }
+    .mini-role-card.steel { border-left-color: var(--steel); }
+
+    .mini-badge {
+      min-width: 28px;
+      height: 28px;
+      border-radius: 5px;
+      background-color: var(--navy);
+      color: var(--amber);
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 1px;
+    }
+
+    .mini-role-text {
+      font-size: 14.8px;
+      line-height: 1.38;
+      color: #1D3542;
+    }
+
+    .vertical-diagram-frame {
+      height: 100%;
+      min-height: 0;
+      width: 100%;
+      background-color: var(--white);
+      border: 1px solid var(--border-light);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      box-shadow: 0 6px 18px rgba(11, 37, 50, 0.06);
+    }
+
+    /* Tabla Comparativa Grande (Slide 16) */
+    .table-wrapper {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: stretch;
+    }
+
+    .comp-table {
+      width: 100%;
+      height: 100%;
+      border-collapse: collapse;
+      background-color: var(--white);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 6px 18px rgba(11, 37, 50, 0.07);
+      border: 1px solid var(--border-light);
+    }
+
+    .comp-table th {
+      background-color: var(--navy);
+      color: var(--white);
+      font-size: 18.5px;
+      font-weight: 700;
+      text-align: left;
+      padding: 15px 22px;
+      border-bottom: 4px solid var(--amber);
+    }
+
+    .comp-table th:nth-child(2) { color: var(--amber); }
+
+    .comp-table td {
+      padding: 13.5px 22px;
+      font-size: 16.2px;
+      line-height: 1.38;
+      border-bottom: 1px solid var(--border-light);
+      vertical-align: middle;
+    }
+
+    .comp-table tr:nth-child(even) td { background-color: #F8FAFB; }
+    .comp-table tr:last-child td { border-bottom: none; }
+
+    .comp-table td:first-child {
+      font-weight: 700;
+      color: var(--navy);
+      width: 24%;
+      background-color: #EEF2F5;
+      border-right: 1px solid var(--border-light);
+    }
+
+    .comp-table td:nth-child(2),
+    .comp-table td:nth-child(3) {
+      width: 38%;
+      color: #1B323E;
+    }
+
+    /* Portada (Slide 1) */
+    .cover-grid {
+      display: grid;
+      grid-template-columns: 1.35fr 0.65fr;
+      gap: 40px;
+      align-items: center;
+      height: 100%;
+    }
+
+    .cover-title {
+      font-size: 46px;
+      font-weight: 700;
+      line-height: 1.12;
+      color: var(--white);
+      margin-bottom: 16px;
+      letter-spacing: -0.8px;
+    }
+
+    .cover-title span { color: var(--amber); }
+
+    .cover-subtitle {
+      font-size: 21px;
+      font-weight: 500;
+      color: var(--amber);
+      line-height: 1.38;
+      margin-bottom: 20px;
+    }
+
+    .cover-support {
+      font-size: 17px;
+      line-height: 1.52;
+      color: #D2DCE2;
+      border-left: 4px solid var(--steel);
+      padding-left: 18px;
+      margin-bottom: 24px;
+    }
+
+    .author-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background-color: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(242, 194, 0, 0.45);
+      border-radius: 8px;
+      padding: 10px 18px;
+    }
+
+    .author-label {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.4px;
+      color: var(--amber);
+    }
+
+    .author-name {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--white);
+    }
+
+    .cover-art {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 10px;
+      height: 360px;
+      padding: 24px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(242, 194, 0, 0.25);
+      border-radius: 14px;
+    }
+
+    .cover-bar-col {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .cover-bar-col:nth-child(even) { transform: translateY(18px); }
+
+    .cover-bar-seg {
+      flex: 1;
+      border-radius: 3px;
+      background-color: var(--amber);
+    }
+
+    .cover-bar-seg.dim {
+      background-color: var(--steel);
+      opacity: 0.45;
+    }
+
+    /* Enlace de simulación (Slide 19) */
+    .sim-link-box {
+      margin-top: 22px;
+      background-color: var(--smoke);
+      border: 1px solid var(--border-light);
+      border-left: 6px solid var(--navy);
+      border-radius: 10px;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .sim-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      width: fit-content;
+      background-color: var(--navy);
+      color: var(--amber);
+      font-weight: 700;
+      font-size: 16px;
+      padding: 11px 20px;
+      border-radius: 7px;
+      text-decoration: none;
+      transition: transform 0.15s ease, background-color 0.15s ease;
+    }
+
+    .sim-btn:hover {
+      background-color: #133A4D;
+      transform: translateY(-1px);
+    }
+
+    .sim-url {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #243B47;
+      text-decoration: underline;
+      word-break: break-all;
+    }
+
+    /* Conclusiones (Slide 20) */
+    .conclusion-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .dark-card {
+      background-color: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(242, 194, 0, 0.3);
+      border-top: 5px solid var(--amber);
+      border-radius: 10px;
+      padding: 26px;
+      font-size: 18.5px;
+      line-height: 1.55;
+      color: var(--smoke);
+    }
+
+    .dark-card.steel-border {
+      border-color: rgba(110, 145, 170, 0.4);
+      border-top-color: var(--steel);
+    }
+
+    .closing-banner {
+      background-color: var(--amber);
+      color: var(--navy);
+      padding: 20px 28px;
+      border-radius: 10px;
+      font-size: 20px;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .closing-tag {
+      background-color: var(--navy);
+      color: var(--amber);
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 15px;
+      letter-spacing: 0.5px;
+    }
+
+    /* ============================================================
+       RELOJ SIMPLE SIN INDICADORES NI ALERTAS
+       ============================================================ */
+    .timer-hud {
+      position: fixed;
+      top: 14px;
+      right: 16px;
+      z-index: 1000;
+      background: rgba(11, 37, 50, 0.92);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 10px;
+      padding: 7px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      color: var(--white);
+      transition: opacity 0.25s ease;
+    }
+
+    .timer-clock {
+      font-size: 20px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.6px;
+      color: var(--white);
+      padding: 0 4px;
+    }
+
+    .hud-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--white);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 5px 9px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .hud-btn:hover {
+      background: var(--amber);
+      color: var(--navy);
+      border-color: var(--amber);
+    }
+
+    /* Barra inferior flotante de navegación */
+    .nav-dock {
+      position: fixed;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      background: rgba(11, 37, 50, 0.92);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 999px;
+      padding: 6px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      transition: opacity 0.3s ease;
+    }
+
+    .nav-dock.idle {
+      opacity: 0.25;
+    }
+
+    .nav-dock:hover {
+      opacity: 1 !important;
+    }
+
+    .nav-counter {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--amber);
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      cursor: pointer;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .nav-counter:hover {
+      background: var(--amber);
+      color: var(--navy);
+    }
+
+    .hud-hidden .timer-hud,
+    .hud-hidden .nav-dock {
+      opacity: 0 !important;
+      pointer-events: none;
+    }
+
+    /* Barra de progreso inferior */
+    .progress-track {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100vw;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.12);
+      z-index: 1001;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 4.76%;
+      background: var(--amber);
+      transition: width 0.25s ease;
+    }
+
+    /* Modal de índice de diapositivas (Tecla G) */
+    .index-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      background: rgba(6, 21, 29, 0.88);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+    }
+
+    .index-modal.open {
+      display: flex;
+    }
+
+    .index-panel {
+      background: var(--navy);
+      border: 1.5px solid var(--amber);
+      border-radius: 14px;
+      width: 100%;
+      max-width: 980px;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+    }
+
+    .index-header {
+      padding: 16px 24px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--white);
+    }
+
+    .index-header h3 {
+      font-size: 18px;
+      color: var(--amber);
+    }
+
+    .index-grid {
+      padding: 20px 24px;
+      overflow-y: auto;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .index-item {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      padding: 10px 12px;
+      text-align: left;
+      color: var(--smoke);
+      font-family: 'Space Grotesk', sans-serif;
+      cursor: pointer;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      transition: all 0.15s ease;
+    }
+
+    .index-item:hover,
+    .index-item.current {
+      background: var(--amber);
+      color: var(--navy);
+      border-color: var(--amber);
+    }
+
+    .index-item-num {
+      font-weight: 700;
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.25);
+      color: inherit;
+    }
+
+    .index-item-title {
+      font-size: 12.5px;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- RELOJ SIMPLE (SIN INDICADORES NI ALERTAS) -->
+  <div class="timer-hud" id="timerHud">
+    <span class="timer-clock" id="timerClock">00:00</span>
+    <button class="hud-btn" id="timerPlayPauseBtn" title="Iniciar / Pausar reloj (Tecla T)">▶</button>
+    <button class="hud-btn" id="timerResetBtn" title="Reiniciar reloj (Tecla R)">↺</button>
+  </div>
+
+  <!-- ESCENARIO DE DIAPOSITIVAS -->
+  <main class="presentation-stage" id="presentationStage">
+
+    <!-- DIAPOSITIVA 1: PORTADA (FONDO OSCURO) -->
+    <section class="slide slide-dark active" data-title="Portada: Blockchains Privadas">
+      <svg class="watermark" viewBox="0 0 200 200" fill="none">
+        <path d="M20 40 L65 160 C72 175 90 175 98 160 L115 120 L132 160 C140 175 158 175 165 160 L190 70" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="slide-header">
+        <div>
+          <span class="eyebrow">Arquitectura Blockchain Empresarial</span>
+        </div>
+        <div class="modular-bars"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+      <div class="slide-body">
+        <div class="cover-grid">
+          <div>
+            <h1 class="cover-title">Blockchains Privadas: <span>Arquitectura de Quorum</span> e <span>Hyperledger Fabric</span></h1>
+            <p class="cover-subtitle">Consenso permisionado, privacidad empresarial y flujos de ejecución distribuida.</p>
+            <p class="cover-support">Análisis técnico sobre cómo la tecnología blockchain se adapta a entornos corporativos, bancarios e institucionales donde la confidencialidad y el rendimiento son críticos.</p>
+            <div class="author-badge">
+              <span class="author-label">Autor</span>
+              <span class="author-name">Jesús Mora</span>
+            </div>
+          </div>
+          <div class="cover-art">
+            <div class="cover-bar-col"><div class="cover-bar-seg"></div><div class="cover-bar-seg dim"></div><div class="cover-bar-seg"></div><div class="cover-bar-seg dim"></div></div>
+            <div class="cover-bar-col"><div class="cover-bar-seg dim"></div><div class="cover-bar-seg"></div><div class="cover-bar-seg dim"></div><div class="cover-bar-seg"></div></div>
+            <div class="cover-bar-col"><div class="cover-bar-seg"></div><div class="cover-bar-seg"></div><div class="cover-bar-seg dim"></div><div class="cover-bar-seg"></div></div>
+            <div class="cover-bar-col"><div class="cover-bar-seg dim"></div><div class="cover-bar-seg dim"></div><div class="cover-bar-seg"></div><div class="cover-bar-seg"></div></div>
+            <div class="cover-bar-col"><div class="cover-bar-seg"></div><div class="cover-bar-seg dim"></div><div class="cover-bar-seg"></div><div class="cover-bar-seg dim"></div></div>
+            <div class="cover-bar-col"><div class="cover-bar-seg dim"></div><div class="cover-bar-seg"></div><div class="cover-bar-seg"></div><div class="cover-bar-seg dim"></div></div>
+            <div class="cover-bar-col"><div class="cover-bar-seg"></div><div class="cover-bar-seg dim"></div><div class="cover-bar-seg dim"></div><div class="cover-bar-seg"></div></div>
+            <div class="cover-bar-col"><div class="cover-bar-seg dim"></div><div class="cover-bar-seg"></div><div class="cover-bar-seg dim"></div><div class="cover-bar-seg"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>BLOCKCHAINS PRIVADAS · QUORUM & HYPERLEDGER FABRIC · AUTOR: JESÚS MORA</span>
+        <span class="slide-num">01 / 21</span>
+      </div>
+    </section>
+
+    <!-- DIAPOSITIVA 2: DE REDES PÚBLICAS A BLOCKCHAINS PRIVADAS (PERMISSIONED) -->
+    <section class="slide slide-light" data-title="¿Por qué las empresas necesitan Blockchains Privadas?">
+      <svg class="watermark" viewBox="0 0 200 200" fill="none">
+        <path d="M20 40 L65 160 C72 175 90 175 98 160 L115 120 L132 160 C140 175 158 175 165 160 L190 70" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="slide-header">
+        <div>
+          <span class="eyebrow">De Redes Públicas a Blockchains Privadas</span>
+          <h2 class="slide-title">¿Por qué las empresas necesitan Blockchains Privadas?</h2>
+        </div>
+        <div class="modular-bars"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+      <div class="slide-body">
+        <div class="callout-box">
+          <strong>Limitaciones de las redes públicas (Bitcoin / Ethereum):</strong> En entornos abiertos cualquiera puede leer todas las transacciones (falta de confidencialidad comercial), la velocidad es baja y los costos de red (gas) dependen de criptomonedas volátiles.
+        </div>
+        <p class="section-label">La solución de las redes permisionadas (Permissioned)</p>
+        <div class="cards-grid-3">
+          <div class="card">
+            <div class="card-number">ID</div>
+            <h3>Identidad verificada</h3>
+            <p>Nadie es anónimo; cada nodo pertenece a una organización conocida y auditada.</p>
+          </div>
+          <div class="card card-navy-top">
+            <div class="card-number">ACL</div>
+            <h3>Privacidad y control de acceso</h3>
+            <p>Solo los participantes autorizados pueden conectarse, leer datos confidenciales o validar operaciones.</p>
+          </div>
+          <div class="card card-steel-top">
+            <div class="card-number">ms</div>
+            <h3>Consenso sin minería</h3>
+            <p>Se reemplaza el gasto energético por algoritmos de votación rápida con confirmación irreversible en milisegundos (<em>finality</em>).</p>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>BLOCKCHAINS PRIVADAS · QUORUM & HYPERLEDGER FABRIC · JESÚS MORA</span>
+        <span class="slide-num">02 / 21</span>
+      </div>
+    </section>
+
+    <!-- DIAPOSITIVA 3: CONSENSO EN REDES PRIVADAS — RAFT -->
+    <section class="slide slide-light" data-title="Algoritmo de Consenso Raft">
+      <svg class="watermark" viewBox="0 0 200 200" fill="none">
+        <path d="M20 40 L65 160 C72 175 90 175 98 160 L115 120 L132 160 C140 175 158 175 165 160 L190 70" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="slide-header">
+        <div>
+          <span class="eyebrow">Protocolos de Consenso · CFT</span>
+          <h2 class="slide-title">Algoritmo de Consenso Raft (Líder y Seguidores)</h2>
+        </div>
+        <div class="modular-bars"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+      <div class="slide-body">
+        <div class="callout-box">
+          <strong>¿Qué es?</strong> Un algoritmo de consenso basado en votación de líder utilizado tanto en Quorum como en Hyperledger Fabric para ordenar bloques a alta velocidad.
+        </div>
+        <div class="steps-list">
+          <div class="step-item">
+            <div class="step-badge">1</div>
+            <div class="step-content">Los nodos de la red eligen mediante votación a un servidor como <strong>Líder</strong> y los demás actúan como <strong>Seguidores</strong>.</div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">2</div>
+            <div class="step-content">El Líder recibe las transacciones, las ordena en un bloque y las replica hacia los Seguidores, enviando señales constantes (<em>heartbeats</em>) para confirmar que sigue activo.</div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">3</div>
+            <div class="step-content">Si el Líder falla o se desconecta, los Seguidores convocan una elección automática en milisegundos y nombran un nuevo Líder.</div>
+          </div>
+        </div>
+        <div class="callout-box steel">
+          <strong>Alcance técnico (CFT):</strong> Es tolerante a fallos de caída (<em>Crash Fault Tolerant</em>), generando bloques en <strong>~50 ms</strong>, pero asume que ningún participante intentará hacer trampa intencionalmente.
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>BLOCKCHAINS PRIVADAS · QUORUM & HYPERLEDGER FABRIC · JESÚS MORA</span>
+        <span class="slide-num">03 / 21</span>
+      </div>
+    </section>
+
+    <!-- DIAPOSITIVA 4: CONSENSO EN REDES PRIVADAS — IBFT / QBFT -->
+    <section class="slide slide-light" data-title="Consenso Bizantino: IBFT y QBFT">
+      <svg class="watermark" viewBox="0 0 200 200" fill="none">
+        <path d="M20 40 L65 160 C72 175 90 175 98 160 L115 120 L132 160 C140 175 158 175 165 160 L190 70" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="slide-header">
+        <div>
+          <span class="eyebrow">Protocolos de Consenso · BFT</span>
+          <h2 class="slide-title">Consenso Bizantino: IBFT y QBFT</h2>
+        </div>
+        <div class="modular-bars"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+      <div class="slide-body">
+        <div class="callout-box">
+          <strong>¿Qué es?</strong> Un protocolo de consenso utilizado en Quorum cuando las empresas participantes son competidoras y no confían en que un único líder actúe con honestidad (<strong>QBFT</strong> es la evolución optimizada de IBFT creada por ConsenSys).
+        </div>
+        <div class="steps-list">
+          <div class="step-item">
+            <div class="step-badge">1</div>
+            <div class="step-content">No existe un jefe permanente; un comité de <strong>Nodos Validadores</strong> se turna para proponer nuevos bloques.</div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">2</div>
+            <div class="step-content">Cada bloque propuesto atraviesa <strong>3 rondas de votación criptográfica</strong> (<em>Pre-prepare</em>, <em>Prepare</em> y <em>Commit</em>) entre todos los validadores.</div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">3</div>
+            <div class="step-content">El bloque solo se escribe en la cadena si recibe la firma de al menos <strong>dos tercios (2/3)</strong> del comité.</div>
+          </div>
+        </div>
+        <div class="callout-box steel">
+          <strong>Alcance técnico (BFT):</strong> Es tolerante a fallos bizantinos (<em>Byzantine Fault Tolerant</em>): garantiza la integridad de la red incluso si hasta un tercio (<strong>f &lt; n/3</strong>) de los nodos son hackeados o maliciosos.
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>BLOCKCHAINS PRIVADAS · QUORUM & HYPERLEDGER FABRIC · JESÚS MORA</span>
+        <span class="slide-num">04 / 21</span>
+      </div>
+    </section>
+
+    <!-- DIAPOSITIVA 5: INTRODUCCIÓN A QUORUM -->
+    <section class="slide slide-light" data-title="Quorum: Ethereum adaptado al entorno empresarial">
+      <svg class="watermark" viewBox="0 0 200 200" fill="none">
+        <path d="M20 40 L65 160 C72 175 90 175 98 160 L115 120 L132 160 C140 175 158 175 165 160 L190 70" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="slide-header">
+        <div>
+          <span class="eyebrow">Plataforma 1 · Enterprise Ethereum</span>
+          <h2 class="slide-title">Quorum: Ethereum adaptado al entorno empresarial</h2>
+        </div>
+        <div class="modular-bars"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+      <div class="slide-body">
+        <div class="cards-grid-2" style="margin-bottom: 22px;">
+          <div class="card">
+            <h3>Origen e Historia</h3>
+            <p>Quorum es una plataforma blockchain empresarial de código abierto creada originalmente por <strong>J.P. Morgan</strong> para pagos interbancarios y mantenida posteriormente por <strong>ConsenSys</strong>.</p>
+          </div>
+          <div class="card card-navy-top">
+            <h3>Arquitectura Derivada</h3>
+            <p>Se construyó modificando directamente el código base del cliente oficial de Ethereum (<strong>Go-Ethereum / Geth</strong>).</p>
+          </div>
+        </div>
+        <div class="cards-grid-3">
+          <div class="card card-steel-top">
+            <div class="card-number">EVM</div>
+            <h3>Compatibilidad Total</h3>
+            <p>Mantiene un <strong>100 % de compatibilidad</strong> con la Máquina Virtual de Ethereum (EVM) y los contratos inteligentes escritos en <strong>Solidity</strong>.</p>
+          </div>
+          <div class="card card-steel-top">
+            <div class="card-number">$0</div>
+            <h3>Gas en Cero</h3>
+            <p>Elimina el costo financiero de operación fijando el precio del gas en cero (no se requiere ETH real).</p>
+          </div>
+          <div class="card card-steel-top">
+            <div class="card-number">TX</div>
+            <h3>Control y Privacidad</h3>
+            <p>Añade gestión de permisos de red, consenso Raft / QBFT y privacidad nativa de transacciones.</p>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>BLOCKCHAINS PRIVADAS · QUORUM & HYPERLEDGER FABRIC · JESÚS MORA</span>
+        <span class="slide-num">05 / 21</span>
+      </div>
+    </section>
+
+    <!-- DIAPOSITIVA 6: BLOQUES FUNCIONALES DE UN NODO QUORUM (diagrama1.png) -->
+    <section class="slide slide-light slide-wide-diagram" data-title="Arquitectura Interna de un Nodo Quorum">
+      <div class="slide-header">
+        <div>
+          <span class="eyebrow">Quorum · Diagrama de Bloques</span>
+          <h2 class="slide-title">Arquitectura Interna de un Nodo Quorum</h2>
+        </div>
+        <div class="modular-bars"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+      <div class="slide-body">
+        <div class="diagram-layout">
+          <div class="diagram-frame">
+            <img src="diagrama1.png" alt="Arquitectura Interna de un Nodo Quorum" class="diagram-img" />
+          </div>
+          <div class="support-note">
+            Cada empresa despliega dos módulos acoplados: el <strong>Nodo Quorum</strong> (que ejecuta la EVM y divide su base de datos en Estado Público y Estado Privado) y <strong>Tessera</strong> (<em>Transaction Manager</em>), encargado de cifrar los datos confidenciales y enviarlos punto a punto fuera de la cadena pública.
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>BLOCKCHAINS PRIVADAS · QUORUM & HYPERLEDGER FABRIC · JESÚS MORA</span>
+        <span class="slide-num">06 / 21</span>
+      </div>
+    </section>
+
+    <!-- DIAPOSITIVA 7: DIAGRAMA DE SECUENCIA QUORUM (diagrama2.png) -->
+    <section class="slide slide-light slide-wide-diagram" data-title="Flujo de una Transacción Privada en Quorum">
+      <div class="slide-header">
+        <div>
+          <span class="eyebrow">Quorum · Diagrama de Secuencia</span>
+          <h2 class="slide-title">Flujo de una Transacción Privada (A hacia B, oculta para C)</h2>
+        </div>
+        <div class="modular-bars"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+      <div class="slide-body">
+        <div class="diagram-layout">
+          <div class="diagram-frame">
+            <img src="diagrama2.png" alt="Flujo de una Transacción Privada en Quorum" class="diagram-img" />
+          </div>
+          <div class="support-note">
+            A la blockchain compartida solo llega un <strong>hash ilegible</strong> como prueba de auditoría; los datos reales viajan cifrados exclusivamente entre los servidores <strong>Tessera</strong> autorizados.
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>BLOCKCHAINS PRIVADAS · QUORUM & HYPERLEDGER FABRIC · JESÚS MORA</span>
+        <span class="slide-num">07 / 21</span>
+      </div>
+    </section>
+
+    <!-- DIAPOSITIVA 8: ACLARATORIA TÉCNICA — HYPERLEDGER VS. HYPERLEDGER FABRIC -->
+    <section class="slide slide-light" data-title="Aclaratoria: Hyperledger vs. Hyperledger Fabric">
+      <svg class="watermark" viewBox="0 0 200 200" fill="none">
+        <path d="M20 40 L65 160 C72 175 90 175 98 160 L115 120 L132 160 C140 175 158 175 165 160 L190 70" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="slide-header">
+        <div>
+          <span class="eyebrow">Aclaratoria Conceptual · Linux Foundation</span>
+          <h2 class="slide-title">Aclaratoria Técnica: Hyperledger vs. Hyperledger Fabric</h2>
+        </div>
+        <div class="modular-bars"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+      <div class="slide-body">
+        <p class="lead-text">Es común confundir ambos términos como si fueran lo mismo, pero representan niveles distintos dentro de la industria:</p>
+        <div class="cards-grid-3">
+          <div class="card">
+            <div class="card-number">01</div>
+            <h3>Hyperledger (El Ecosistema / Proyecto Paraguas)</h3>
+            <p>Iniciativa colaborativa de código abierto impulsada por la <strong>Linux Foundation</strong> (no es una criptomoneda ni una única blockchain). Alberga múltiples herramientas y estándares empresariales bajo un mismo techo.</p>
+          </div>
+          <div class="card card-navy-top">
+            <div class="card-number">02</div>
+            <h3>Hyperledger Fabric (El Framework específico)</h3>
+            <p>Uno de los proyectos estrella dentro de ese ecosistema (impulsado inicialmente por <strong>IBM</strong>). Es la plataforma concreta sobre la cual se construyen redes blockchain privadas modulares.</p>
+          </div>
+          <div class="card card-steel-top">
+            <div class="card-number">03</div>
+            <h3>Otros proyectos del ecosistema (referencia)</h3>
+            <p>Así como existe Fabric (arquitectura modular desde cero), Hyperledger aloja otros enfoques como <strong>Hyperledger Besu</strong> (cliente Ethereum empresarial, competidor de Quorum) o <strong>Hyperledger Indy</strong> (identidad digital).</p>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>BLOCKCHAINS PRIVADAS · QUORUM & HYPERLEDGER FABRIC · JESÚS MORA</span>
+        <span class="slide-num">08 / 21</span>
+      </div>
+    </section>
+
+    <!-- DIAPOSITIVA 9: INTRODUCCIÓN A HYPERLEDGER FABRIC -->
+    <section class="slide slide-light" data-title="Hyperledger Fabric: Arquitectura Modular Empresarial">
+      <svg class="watermark" viewBox="0 0 200 200" fill="none">
+        <path d="M20 40 L65 160 C72 175 90 175 98 160 L115 120 L132 160 C140 175 158 175 165 160 L190 70" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="slide-header">
+        <div>
+          <span class="eyebrow">Plataforma 2 · Linux Foundation</span>
+          <h2 class="slide-title">Hyperledger Fabric: Arquitectura Modular Empresarial</h2>
+        </div>
+        <div class="modular-bars"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+      <div class="slide-body">
+        <div class="callout-box">
+          A diferencia de Quorum —que adapta el código existente de Ethereum—, <strong>Hyperledger Fabric</strong> fue diseñado desde cero con una arquitectura modular <em>plug-and-play</em> pensada para grandes consorcios corporativos.
+        </div>
+        <p class="section-label">Pilares fundamentales de su diseño</p>
+        <div class="cards-grid-3">
+          <div class="card">
+            <div class="card-number">ID</div>
+            <h3>Identidad empresarial estricta</h3>
+            <p>Todo participante opera con certificados digitales verificados, eliminando el anonimato.</p>
+          </div>
+          <div class="card card-navy-top">
+            <div class="card-number">ROL</div>
+            <h3>Separación de responsabilidades</h3>
+            <p>Divide los nodos según su función (unos ejecutan contratos y otros únicamente ordenan bloques).</p>
+          </div>
+          <div class="card card-steel-top">
+            <div class="card-number">CH</div>
+            <h3>Aislamiento nativo de datos</h3>
+            <p>Permite crear sub-redes privadas llamadas <strong>Canales</strong> dentro de una misma infraestructura física.</p>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>BLOCKCHAINS PRIVADAS · QUORUM & HYPERLEDGER FABRIC · JESÚS MORA</span>
+        <span class="slide-num">09 / 21</span>
+      </div>
+    </section>
+
+    <!-- DIAPOSITIVA 10: IDENTIDAD Y PERMISOS — X.509, CA Y MSP -->
+    <section class="slide slide-light" data-title="Infraestructura de Identidad: X.509, CA y MSP">
+      <svg class="watermark" viewBox="0 0 200 200" fill="none">
+        <path d="M20 40 L65 160 C72 175 90 175 98 160 L115 120 L132 160 C140 175 158 175 165 160 L190 70" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="slide-header">
+        <div>
+          <span class="eyebrow">Fabric · Gobernanza e Identidad PKI</span>
+          <h2 class="slide-title">Infraestructura de Identidad: Certificados X.509, CA y MSP</h2>
+        </div>
+        <div class="modular-bars"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+      <div class="slide-body">
+        <p class="lead-text">En Hyperledger Fabric toda interacción requiere identidad verificada mediante tres componentes fundamentales:</p>
+        <div class="cards-grid-3">
+          <div class="card">
+            <div class="card-number">X.509</div>
+            <h3>Certificados Criptográficos</h3>
+            <p>Son el <strong>"pasaporte digital"</strong> de cada empresa, servidor y usuario (el mismo estándar usado en banca web HTTPS). Vinculan los datos de la organización, el rol del usuario y su llave pública.</p>
+          </div>
+          <div class="card card-navy-top">
+            <div class="card-number">CA</div>
+            <h3>Certificate Authority</h3>
+            <p>Es la <strong>"oficina emisora"</strong>. Un servidor encargado de emitir, renovar y revocar los certificados X.509 y llaves privadas de los miembros de una organización.</p>
+          </div>
+          <div class="card card-steel-top">
+            <div class="card-number">MSP</div>
+            <h3>Membership Service Provider</h3>
+            <p>Es el <strong>"guardia de seguridad"</strong> dentro de la blockchain. Valida los certificados emitidos por la CA, verifica si son auténticos y determina qué permisos tiene ese usuario dentro de la red.</p>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>BLOCKCHAINS PRIVADAS · QUORUM & HYPERLEDGER FABRIC · JESÚS MORA</span>
+        <span class="slide-num">10 / 21</span>
+      </div>
+    </section>
+
+    <!-- DIAPOSITIVA 11: EJECUCIÓN — PEERS Y CHAINCODE -->
+    <section class="slide slide-light" data-title="Nodos Pares (Peers) y Contratos Inteligentes (Chaincode)">
+      <svg class="watermark" viewBox="0 0 200 200" fill="none">
+        <path d="M20 40 L65 160 C72 175 90 175 98 160 L115 120 L132 160 C140 175 158 175 165 160 L190 70" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="slide-header">
+        <div>
+          <span class="eyebrow">Fabric · Nodos y Lógica de Negocio</span>
+          <h2 class="slide-title">Nodos Pares (Peers) y Contratos Inteligentes (Chaincode)</h2>
+        </div>
+        <div class="modular-bars"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+      <div class="slide-body">
+        <div class="cards-grid-2">
+          <div class="card">
+            <div class="card-number">P</div>
+            <h3>Peers (Nodos Pares)</h3>
+            <p>Son los servidores propiedad de cada organización que almacenan el libro mayor (<em>Ledger</em>) y ejecutan la lógica de negocio. Cumplen dos funciones:</p>
+            <div style="margin-top: 8px; padding: 12px 14px; background: var(--smoke); border-radius: 6px; font-size: 15.5px; line-height: 1.45;">
+              <strong>• Endorsing Peers (Avaladores):</strong> Simulan la ejecución de una transacción y la firman digitalmente para certificar que el resultado matemático es válido.
+            </div>
+            <div style="padding: 12px 14px; background: var(--smoke); border-radius: 6px; font-size: 15.5px; line-height: 1.45;">
+              <strong>• Committer Peers (Confirmadores):</strong> Todos los Peers cumplen este rol; reciben los bloques finales, verifican las firmas y escriben los datos en la base de datos.
+            </div>
+          </div>
+          <div class="card card-navy-top">
+            <div class="card-number">CC</div>
+            <h3>Chaincode (Contratos Inteligentes)</h3>
+            <p>Es el nombre que reciben los contratos inteligentes en Hyperledger Fabric.</p>
+            <p style="margin-top: 6px;">Se programan en lenguajes empresariales estándar (<strong>Go, Java o Node.js</strong>) y se ejecutan aislados dentro de <strong>contenedores Docker</strong> independientes del nodo para máxima seguridad y estabilidad.</p>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>BLOCKCHAINS PRIVADAS · QUORUM & HYPERLEDGER FABRIC · JESÚS MORA</span>
+        <span class="slide-num">11 / 21</span>
+      </div>
+    </section>
+
+    <!-- DIAPOSITIVA 12: PRIVACIDAD EN FABRIC — CANALES -->
+    <section class="slide slide-light" data-title="Aislamiento de Datos mediante Canales (Channels)">
+      <svg class="watermark" viewBox="0 0 200 200" fill="none">
+        <path d="M20 40 L65 160 C72 175 90 175 98 160 L115 120 L132 160 C140 175 158 175 165 160 L190 70" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="slide-header">
+        <div>
+          <span class="eyebrow">Fabric · Confidencialidad de Red</span>
+          <h2 class="slide-title">Aislamiento de Datos mediante Canales (Channels)</h2>
+        </div>
+        <div class="modular-bars"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+      <div class="slide-body">
+        <div class="callout-box">
+          <strong>¿Qué es un Canal?</strong> Es una sub-blockchain completamente independiente y privada creada entre un subconjunto específico de organizaciones dentro de la misma red física.
+        </div>
+        <p class="section-label">Ejemplo práctico en cadena de suministro</p>
+        <div class="cards-grid-3">
+          <div class="card card-steel-top">
+            <div class="card-number">RED</div>
+            <h3>Consorcio General</h3>
+            <p>Una red física conecta a tres organizaciones participantes: una <strong>Fábrica</strong>, un <strong>Transportista</strong> y una <strong>Tienda</strong>.</p>
+          </div>
+          <div class="card">
+            <div class="card-number">A</div>
+            <h3>Canal A (Logística)</h3>
+            <p>La <strong>Fábrica</strong> y el <strong>Transportista</strong> crean el Canal A exclusivamente para pactar tarifas de flete.</p>
+          </div>
+          <div class="card card-navy-top">
+            <div class="card-number">B</div>
+            <h3>Canal B (Comercial)</h3>
+            <p>La <strong>Fábrica</strong> y la <strong>Tienda</strong> crean el Canal B para negociar precios mayoristas de distribución.</p>
+          </div>
+        </div>
+        <div class="callout-box steel">
+          <strong>Resultado técnico:</strong> Cada canal mantiene su propio archivo de bloques (<em>Ledger</em>) y su propio <em>Chaincode</em>. Los servidores de la Tienda físicamente no reciben ni almacenan información del Canal A.
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>BLOCKCHAINS PRIVADAS · QUORUM & HYPERLEDGER FABRIC · JESÚS MORA</span>
+        <span class="slide-num">12 / 21</span>
+      </div>
+    </section>
+
+    <!-- DIAPOSITIVA 13: BLOQUES FUNCIONALES DE HYPERLEDGER FABRIC (diagrama3.png) -->
+    <section class="slide slide-light" style="padding: 36px 46px 32px 46px;" data-title="Arquitectura Modular y Bloques Funcionales en Fabric">
+      <div class="slide-body">
+        <div class="vertical-slide-grid">
+          <div class="vertical-info-col">
+            <div>
+              <div class="vertical-header-block">
+                <div class="vertical-top-bar">
+                  <span class="eyebrow" style="margin-bottom: 0;">Fabric · Diagrama de Bloques</span>
+                  <div class="modular-bars"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+                </div>
+                <h2 class="vertical-title">Arquitectura Modular y Bloques Funcionales en Fabric</h2>
+              </div>
+              <p style="font-size: 15.8px; line-height: 1.46; color: #1D3542; margin-bottom: 14px;">
+                A diferencia de otras blockchains donde todos los nodos hacen lo mismo, Fabric separa estrictamente las responsabilidades de su arquitectura:
+              </p>
+            </div>
+
+            <div class="vertical-roles-list">
+              <div class="mini-role-card">
+                <div class="mini-badge">ID</div>
+                <div class="mini-role-text"><strong>CA &amp; MSP:</strong> Emiten y validan credenciales X.509 para gobernar la identidad y los permisos de cada organización.</div>
+              </div>
+              <div class="mini-role-card navy">
+                <div class="mini-badge">P</div>
+                <div class="mini-role-text"><strong>Endorsing &amp; Committer Peers:</strong> Simulan y ejecutan el Chaincode aislado en Docker y mantienen el libro mayor (<em>Ledger</em>).</div>
+              </div>
+              <div class="mini-role-card steel">
+                <div class="mini-badge">OS</div>
+                <div class="mini-role-text"><strong>Ordering Service (Clúster Raft):</strong> Únicamente ordena las transacciones avaladas y distribuye los bloques por canal.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="vertical-diagram-frame">
+            <img src="diagrama3.png" alt="Arquitectura Modular y Bloques Funcionales en Fabric" class="diagram-img" />
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer" style="margin-top: 14px; padding-top: 12px;">
+        <span>BLOCKCHAINS PRIVADAS · QUORUM & HYPERLEDGER FABRIC · JESÚS MORA</span>
+        <span class="slide-num">13 / 21</span>
+      </div>
+    </section>
+
+    <!-- DIAPOSITIVA 14: LA GRAN INNOVACIÓN — EXECUTE - ORDER - VALIDATE -->
+    <section class="slide slide-light" data-title="Nuevo Paradigma: Execute - Order - Validate">
+      <svg class="watermark" viewBox="0 0 200 200" fill="none">
+        <path d="M20 40 L65 160 C72 175 90 175 98 160 L115 120 L132 160 C140 175 158 175 165 160 L190 70" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="slide-header">
+        <div>
+          <span class="eyebrow">Fabric · Rendimiento y Concurrencia</span>
+          <h2 class="slide-title">Nuevo Paradigma: Execute - Order - Validate</h2>
+        </div>
+        <div class="modular-bars"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+      <div class="slide-body">
+        <div class="callout-box">
+          Las blockchains tradicionales (Ethereum, Quorum) siguen el flujo <strong>Order - Execute</strong>: primero ordenan transacciones en un bloque y luego todos los nodos ejecutan el código secuencialmente, lo que crea cuellos de botella. Hyperledger Fabric invierte este flujo en tres fases para lograr alta escalabilidad:
+        </div>
+        <div class="cards-grid-3">
+          <div class="card">
+            <div class="card-number">1</div>
+            <h3>Execute (Ejecutar en paralelo)</h3>
+            <p>Solo los <em>Endorsing Peers</em> designados simulan el Chaincode, generan un conjunto de lectura/escritura (<em>Read/Write Set</em>) y firman el resultado, sin modificar aún el libro mayor.</p>
+          </div>
+          <div class="card card-navy-top">
+            <div class="card-number">2</div>
+            <h3>Order (Ordenar a ciegas)</h3>
+            <p>El <em>Ordering Service</em> (Raft) recibe las propuestas firmadas, las ordena cronológicamente y arma el bloque sin ejecutar ningún código.</p>
+          </div>
+          <div class="card card-steel-top">
+            <div class="card-number">3</div>
+            <h3>Validate (Validar y guardar)</h3>
+            <p>Todos los Peers del canal verifican las firmas de aval y comprueban que no existan conflictos de versiones (evitando doble gasto) antes de escribir el bloque en disco.</p>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>BLOCKCHAINS PRIVADAS · QUORUM & HYPERLEDGER FABRIC · JESÚS MORA</span>
+        <span class="slide-num">14 / 21</span>
+      </div>
+    </section>
+
+    <!-- DIAPOSITIVA 15: DIAGRAMA DE SECUENCIA FABRIC (diagrama4.png) -->
+    <section class="slide slide-light slide-wide-diagram" data-title="Secuencia de Ejecución en Hyperledger Fabric">
+      <div class="slide-header">
+        <div>
+          <span class="eyebrow">Fabric · Diagrama de Secuencia</span>
+          <h2 class="slide-title">Secuencia de Ejecución en Hyperledger Fabric</h2>
+        </div>
+        <div class="modular-bars"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+      <div class="slide-body">
+        <div class="diagram-layout">
+          <div class="diagram-frame">
+            <img src="diagrama4.png" alt="Secuencia de Ejecución en Hyperledger Fabric" class="diagram-img" />
+          </div>
+          <div class="support-note">
+            Al desacoplar la ejecución del ordenamiento, Fabric permite ejecutar múltiples transacciones en paralelo y alcanzar <strong>miles de transacciones por segundo</strong> sin comprometer la consistencia de los datos.
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>BLOCKCHAINS PRIVADAS · QUORUM & HYPERLEDGER FABRIC · JESÚS MORA</span>
+        <span class="slide-num">15 / 21</span>
+      </div>
+    </section>
+
+    <!-- DIAPOSITIVA 16: COMPARATIVA TÉCNICA (TABLA GRANDE) -->
+    <section class="slide slide-light" data-title="Síntesis Comparativa: Quorum vs. Hyperledger Fabric">
+      <div class="slide-header" style="margin-bottom: 14px; padding-bottom: 10px;">
+        <div>
+          <span class="eyebrow">Evaluación Arquitectónica</span>
+          <h2 class="slide-title">Síntesis Comparativa: ¿Cuándo elegir cada plataforma?</h2>
+        </div>
+        <div class="modular-bars"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+      <div class="slide-body">
+        <div class="table-wrapper">
+          <table class="comp-table">
+            <thead>
+              <tr>
+                <th>Dimensión Técnica</th>
+                <th>Quorum (ConsenSys)</th>
+                <th>Hyperledger Fabric (Linux Foundation)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Arquitectura base</td>
+                <td>Bifurcación empresarial de Ethereum (Geth).</td>
+                <td>Arquitectura modular construida desde cero.</td>
+              </tr>
+              <tr>
+                <td>Contratos inteligentes</td>
+                <td>Solidity (compatible con EVM).</td>
+                <td>Chaincode en Go, Java o Node.js (Docker).</td>
+              </tr>
+              <tr>
+                <td>Flujo de procesamiento</td>
+                <td>Order - Execute (ejecución secuencial global).</td>
+                <td>Execute - Order - Validate (ejecución paralela).</td>
+              </tr>
+              <tr>
+                <td>Privacidad de datos</td>
+                <td>Estado privado + cifrado punto a punto (Tessera).</td>
+                <td>Sub-redes aisladas (Canales) y Private Data.</td>
+              </tr>
+              <tr>
+                <td>Control de identidad</td>
+                <td>Listas de nodos permisionados y roles.</td>
+                <td>Infraestructura PKI completa (X.509, CA y MSP).</td>
+              </tr>
+              <tr>
+                <td>Algoritmos de consenso</td>
+                <td>Raft (CFT) e IBFT / QBFT (BFT).</td>
+                <td>Raft (aislado en el Ordering Service).</td>
+              </tr>
+              <tr>
+                <td>Escenario ideal</td>
+                <td>Migrar aplicaciones Ethereum/Solidity a entornos privados con mínima fricción.</td>
+                <td>Consorcios complejos que exigen aislamiento por canales, alta concurrencia y lenguajes estándar.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="slide-footer" style="padding-top: 10px;">
+        <span>BLOCKCHAINS PRIVADAS · QUORUM & HYPERLEDGER FABRIC · JESÚS MORA</span>
+        <span class="slide-num">16 / 21</span>
+      </div>
+    </section>
+
+    <!-- DIAPOSITIVA 17: CASOS DE USO REALES — QUORUM EN PRODUCCIÓN -->
+    <section class="slide slide-light" data-title="Casos de Uso Reales de Quorum (Sector Financiero)">
+      <svg class="watermark" viewBox="0 0 200 200" fill="none">
+        <path d="M20 40 L65 160 C72 175 90 175 98 160 L115 120 L132 160 C140 175 158 175 165 160 L190 70" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="slide-header">
+        <div>
+          <span class="eyebrow">Quorum en Producción · Sector Financiero</span>
+          <h2 class="slide-title">Casos de Uso Reales de Quorum (Sector Financiero)</h2>
+        </div>
+        <div class="modular-bars"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+      <div class="slide-body">
+        <p class="lead-text">Debido a su compatibilidad con Ethereum y su enfoque en privacidad punto a punto con <strong>Tessera</strong>, Quorum es la plataforma dominante en banca institucional y mercados de capitales:</p>
+        <div class="cards-grid-3">
+          <div class="card">
+            <div class="card-number">01</div>
+            <h3>Kinexys (antes Onyx) de J.P. Morgan</h3>
+            <p>Red interbancaria privada construida sobre Quorum para liquidar pagos institucionales y transferencias transfronterizas de miles de millones de dólares diarios de forma instantánea (<strong>24/7</strong>), eliminando demoras de días en cámaras de compensación tradicionales.</p>
+          </div>
+          <div class="card card-navy-top">
+            <div class="card-number">02</div>
+            <h3>Proyecto Ubin (Autoridad Monetaria de Singapur)</h3>
+            <p>Consorcio liderado por el banco central de Singapur junto a bancos comerciales para probar la emisión de dinero digital interbancario y liquidación de valores tokenizados con privacidad estricta entre entidades.</p>
+          </div>
+          <div class="card card-steel-top">
+            <div class="card-number">03</div>
+            <h3>Tokenización de activos financieros (Broadridge / Goldman Sachs)</h3>
+            <p>Emisión y negociación de bonos digitales y acuerdos de recompra (<em>repos</em>) intradía mediante contratos inteligentes en <strong>Solidity</strong>.</p>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>BLOCKCHAINS PRIVADAS · QUORUM & HYPERLEDGER FABRIC · JESÚS MORA</span>
+        <span class="slide-num">17 / 21</span>
+      </div>
+    </section>
+
+    <!-- DIAPOSITIVA 18: CASOS DE USO REALES — HYPERLEDGER FABRIC EN PRODUCCIÓN -->
+    <section class="slide slide-light" data-title="Casos de Uso Reales de Hyperledger Fabric">
+      <svg class="watermark" viewBox="0 0 200 200" fill="none">
+        <path d="M20 40 L65 160 C72 175 90 175 98 160 L115 120 L132 160 C140 175 158 175 165 160 L190 70" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="slide-header">
+        <div>
+          <span class="eyebrow">Hyperledger Fabric en Producción · Industria y Logística</span>
+          <h2 class="slide-title">Casos de Uso Reales de Hyperledger Fabric (Industria y Logística)</h2>
+        </div>
+        <div class="modular-bars"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+      <div class="slide-body">
+        <p class="lead-text">Gracias a sus certificados <strong>X.509</strong>, canales aislados y alto rendimiento (<em>Execute-Order-Validate</em>), Hyperledger Fabric lidera en cadenas de suministro y consorcios multisectoriales:</p>
+        <div class="cards-grid-3">
+          <div class="card">
+            <div class="card-number">01</div>
+            <h3>IBM Food Trust (Walmart, Nestlé y Carrefour)</h3>
+            <p>Red global de trazabilidad alimentaria. Permite rastrear el origen exacto de un producto agrícola desde la granja hasta el supermercado en <strong>2.2 segundos</strong> (un proceso que antes tomaba 7 días), aislando precios confidenciales mediante canales privados.</p>
+          </div>
+          <div class="card card-navy-top">
+            <div class="card-number">02</div>
+            <h3>We.Trade (Consorcio de Bancos Europeos)</h3>
+            <p>Plataforma de financiamiento comercial utilizada por bancos como Santander, Deutsche Bank y HSBC para automatizar garantías de pago entre exportadores e importadores europeos mediante <strong>Chaincode</strong>.</p>
+          </div>
+          <div class="card card-steel-top">
+            <div class="card-number">03</div>
+            <h3>Redes de salud y aduanas (Change Healthcare / TradeLens)</h3>
+            <p>Gestión de reclamaciones médicas y documentación aduanera portuaria con control estricto de acceso por roles mediante <strong>MSP</strong>.</p>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>BLOCKCHAINS PRIVADAS · QUORUM & HYPERLEDGER FABRIC · JESÚS MORA</span>
+        <span class="slide-num">18 / 21</span>
+      </div>
+    </section>
+
+    <!-- DIAPOSITIVA 19: DEMOSTRACIÓN PRÁCTICA -->
+    <section class="slide slide-light" data-title="Demostración Práctica: Simulador">
+      <svg class="watermark" viewBox="0 0 200 200" fill="none">
+        <path d="M20 40 L65 160 C72 175 90 175 98 160 L115 120 L132 160 C140 175 158 175 165 160 L190 70" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="slide-header">
+        <div>
+          <span class="eyebrow">Laboratorio Aplicado</span>
+          <h2 class="slide-title">Demostración Práctica</h2>
+        </div>
+        <div class="modular-bars"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+      <div class="slide-body">
+        <div style="background: var(--white); border: 1px solid var(--border-light); border-left: 12px solid var(--amber); border-radius: 14px; padding: 40px 46px; box-shadow: 0 10px 26px rgba(11, 37, 50, 0.06); display: flex; justify-content: space-between; align-items: center; gap: 36px;">
+          <div style="flex: 1;">
+            <span style="display: inline-block; background: var(--amber); color: var(--navy); font-weight: 700; font-size: 14px; padding: 5px 14px; border-radius: 5px; letter-spacing: 1px; margin-bottom: 14px;">ENTORNO CONTROLADO</span>
+            <h3 style="font-size: 42px; font-weight: 700; color: var(--navy); margin-bottom: 12px; line-height: 1.15;">Veamos una simulación</h3>
+            <p style="font-size: 20px; color: #2C4654; line-height: 1.42;">Demostración práctica de privacidad y ejecución en entorno controlado.</p>
+
+            <div class="sim-link-box">
+              <a href="https://mora-j.github.io/simulador_interactivo_blockchains_privadas/simulador_interactivo_blockchains_privadas_quorum_vs_hyperledger_fabricV2.html" target="_blank" rel="noopener noreferrer" class="sim-btn">
+                Abrir Simulador Interactivo (Quorum vs. Hyperledger Fabric) ↗
+              </a>
+              <a href="https://mora-j.github.io/simulador_interactivo_blockchains_privadas/simulador_interactivo_blockchains_privadas_quorum_vs_hyperledger_fabricV2.html" target="_blank" rel="noopener noreferrer" class="sim-url">
+                https://mora-j.github.io/simulador_interactivo_blockchains_privadas/simulador_interactivo_blockchains_privadas_quorum_vs_hyperledger_fabricV2.html
+              </a>
+            </div>
+          </div>
+          <div style="display: flex; gap: 12px; height: 240px; flex-shrink: 0;">
+            <div style="width: 16px; background: var(--amber); border-radius: 4px; transform: translateY(-12px);"></div>
+            <div style="width: 16px; background: var(--navy); border-radius: 4px; transform: translateY(12px);"></div>
+            <div style="width: 16px; background: var(--amber); border-radius: 4px; transform: translateY(-12px);"></div>
+            <div style="width: 16px; background: var(--steel); border-radius: 4px; transform: translateY(12px);"></div>
+            <div style="width: 16px; background: var(--amber); border-radius: 4px; transform: translateY(-12px);"></div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>BLOCKCHAINS PRIVADAS · QUORUM & HYPERLEDGER FABRIC · JESÚS MORA</span>
+        <span class="slide-num">19 / 21</span>
+      </div>
+    </section>
+
+    <!-- DIAPOSITIVA 20: CONCLUSIÓN Y ESPACIO PARA PREGUNTAS (FONDO OSCURO) -->
+    <section class="slide slide-dark" data-title="Conclusión y Espacio para Preguntas">
+      <svg class="watermark" viewBox="0 0 200 200" fill="none">
+        <path d="M20 40 L65 160 C72 175 90 175 98 160 L115 120 L132 160 C140 175 158 175 165 160 L190 70" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="slide-header">
+        <div>
+          <span class="eyebrow">Cierre de Exposición</span>
+          <h2 class="slide-title">Conclusión: La Evolución Empresarial de Blockchain</h2>
+        </div>
+        <div class="modular-bars"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+      <div class="slide-body">
+        <div class="conclusion-cards">
+          <div class="dark-card">
+            Las blockchains privadas demuestran que la tecnología distribuida no depende de criptomonedas públicas ni de minería intensiva para aportar valor real.
+          </div>
+          <div class="dark-card steel-border">
+            Tanto <strong style="color: var(--amber);">Quorum</strong> (extendiendo el ecosistema de Ethereum mediante Tessera y QBFT) como <strong style="color: var(--amber);">Hyperledger Fabric</strong> (redefiniendo la arquitectura mediante certificados X.509, Canales y el flujo <em>Execute-Order-Validate</em>) resuelven las exigencias de privacidad, auditoría, rendimiento y gobernanza que demanda la industria moderna.
+          </div>
+        </div>
+        <div class="closing-banner">
+          <span>Muchas gracias por su atención. Abrimos el espacio de 2 minutos para sus preguntas.</span>
+          <span class="closing-tag">SESIÓN DE Q&amp;A · 2 MIN</span>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>BLOCKCHAINS PRIVADAS · QUORUM & HYPERLEDGER FABRIC · JESÚS MORA</span>
+        <span class="slide-num">20 / 21</span>
+      </div>
+    </section>
+
+    <!-- DIAPOSITIVA 21: REFERENCIAS -->
+    <section class="slide slide-light" data-title="Referencias">
+      <svg class="watermark" viewBox="0 0 200 200" fill="none">
+        <path d="M20 40 L65 160 C72 175 90 175 98 160 L115 120 L132 160 C140 175 158 175 165 160 L190 70" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="slide-header">
+        <div>
+          <span class="eyebrow">Fuentes Técnicas y Académicas</span>
+          <h2 class="slide-title">Referencias</h2>
+        </div>
+        <div class="modular-bars"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+      <div class="slide-body">
+        <div class="steps-list">
+          <div class="step-item">
+            <div class="step-badge">1</div>
+            <div class="step-content">
+              <strong>ConsenSys Quorum Documentation:</strong> Arquitectura de nodos, transacciones privadas con Tessera y consenso QBFT/Raft (<em>docs.goquorum.consensys.io</em>).
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">2</div>
+            <div class="step-content">
+              <strong>Hyperledger Fabric Documentation (Linux Foundation):</strong> Arquitectura Execute-Order-Validate, Membership Service Provider (MSP), Channels y Chaincode (<em>hyperledger-fabric.readthedocs.io</em>).
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">3</div>
+            <div class="step-content">
+              <strong>Androulaki, E. et al. (2018):</strong> <em>Hyperledger Fabric: A Distributed Operating System for Permissioned Blockchains</em>. Proceedings of the Thirteenth EuroSys Conference (ACM).
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-badge">4</div>
+            <div class="step-content">
+              <strong>Ongaro, D., &amp; Ousterhout, J. (2014):</strong> <em>In Search of an Understandable Consensus Algorithm (Raft)</em>. USENIX Annual Technical Conference.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>BLOCKCHAINS PRIVADAS · QUORUM & HYPERLEDGER FABRIC · JESÚS MORA</span>
+        <span class="slide-num">21 / 21</span>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- BARRA DE NAVEGACIÓN INFERIOR -->
+  <nav class="nav-dock" id="navDock">
+    <button class="hud-btn" id="prevBtn" title="Diapositiva anterior (←)">←</button>
+    <span class="nav-counter" id="slideCounter" title="Abrir índice de láminas (Tecla G)">01 / 21</span>
+    <button class="hud-btn" id="nextBtn" title="Siguiente diapositiva (→)">→</button>
+    <button class="hud-btn" id="gridBtn" title="Ver todas las láminas (Tecla G)">⊞</button>
+    <button class="hud-btn" id="fullscreenBtn" title="Pantalla completa (Tecla F)">⛶</button>
+  </nav>
+
+  <!-- BARRA DE PROGRESO -->
+  <div class="progress-track">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+
+  <!-- MODAL ÍNDICE DE DIAPOSITIVAS -->
+  <div class="index-modal" id="indexModal">
+    <div class="index-panel">
+      <div class="index-header">
+        <h3>Índice de Diapositivas (21 láminas)</h3>
+        <button class="hud-btn" id="closeIndexBtn">✕ Cerrar</button>
+      </div>
+      <div class="index-grid" id="indexGrid"></div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const slides = Array.from(document.querySelectorAll('.slide'));
+      const totalSlides = slides.length;
+      let currentIndex = 0;
+
+      // Elementos de navegación
+      const slideCounter = document.getElementById('slideCounter');
+      const progressFill = document.getElementById('progressFill');
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
+      const gridBtn = document.getElementById('gridBtn');
+      const fullscreenBtn = document.getElementById('fullscreenBtn');
+      const navDock = document.getElementById('navDock');
+      const indexModal = document.getElementById('indexModal');
+      const indexGrid = document.getElementById('indexGrid');
+      const closeIndexBtn = document.getElementById('closeIndexBtn');
+
+      // Elementos del reloj simple
+      const timerClock = document.getElementById('timerClock');
+      const timerPlayPauseBtn = document.getElementById('timerPlayPauseBtn');
+      const timerResetBtn = document.getElementById('timerResetBtn');
+
+      let elapsedSeconds = 0;
+      let timerInterval = null;
+      let isRunning = false;
+
+      // Escalado proporcional 1280x720 al tamaño exacto de ventana
+      function updateSlideScale() {
+        const scaleX = window.innerWidth / 1280;
+        const scaleY = window.innerHeight / 720;
+        const scale = Math.min(scaleX, scaleY);
+        document.documentElement.style.setProperty('--slide-scale', scale.toFixed(5));
+      }
+
+      window.addEventListener('resize', updateSlideScale);
+      updateSlideScale();
+
+      // Formateo MM:SS del reloj
+      function formatTime(totalSec) {
+        const mins = Math.floor(totalSec / 60);
+        const secs = totalSec % 60;
+        return String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+      }
+
+      function renderClock() {
+        timerClock.textContent = formatTime(elapsedSeconds);
+      }
+
+      function startTimer() {
+        if (isRunning) return;
+        isRunning = true;
+        timerPlayPauseBtn.textContent = '⏸';
+        timerInterval = setInterval(() => {
+          elapsedSeconds += 1;
+          renderClock();
+        }, 1000);
+      }
+
+      function pauseTimer() {
+        if (!isRunning) return;
+        isRunning = false;
+        timerPlayPauseBtn.textContent = '▶';
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+
+      function toggleTimer() {
+        if (isRunning) {
+          pauseTimer();
+        } else {
+          startTimer();
+        }
+      }
+
+      function resetTimer() {
+        pauseTimer();
+        elapsedSeconds = 0;
+        renderClock();
+      }
+
+      timerPlayPauseBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleTimer();
+      });
+
+      timerResetBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        resetTimer();
+      });
+
+      // Construcción del índice rápido
+      function buildIndex() {
+        indexGrid.innerHTML = '';
+        slides.forEach((slide, idx) => {
+          const item = document.createElement('button');
+          item.className = 'index-item' + (idx === currentIndex ? ' current' : '');
+          const title = slide.getAttribute('data-title') || `Diapositiva ${idx + 1}`;
+          item.innerHTML = `
+            <span class="index-item-num">${String(idx + 1).padStart(2, '0')}</span>
+            <span class="index-item-title">${title}</span>
+          `;
+          item.addEventListener('click', () => {
+            goToSlide(idx);
+            closeIndex();
+          });
+          indexGrid.appendChild(item);
+        });
+      }
+
+      function openIndex() {
+        buildIndex();
+        indexModal.classList.add('open');
+      }
+
+      function closeIndex() {
+        indexModal.classList.remove('open');
+      }
+
+      function goToSlide(index) {
+        if (index < 0) index = 0;
+        if (index >= totalSlides) index = totalSlides - 1;
+
+        // Inicia automáticamente el reloj al avanzar desde la portada si estaba en 00:00
+        if (index > 0 && elapsedSeconds === 0 && !isRunning) {
+          startTimer();
+        }
+
+        slides[currentIndex].classList.remove('active');
+        currentIndex = index;
+        slides[currentIndex].classList.add('active');
+
+        const currentFormatted = String(currentIndex + 1).padStart(2, '0');
+        const totalFormatted = String(totalSlides).padStart(2, '0');
+        slideCounter.textContent = `${currentFormatted} / ${totalFormatted}`;
+
+        const pct = ((currentIndex + 1) / totalSlides) * 100;
+        progressFill.style.width = pct + '%';
+      }
+
+      function nextSlide() {
+        if (currentIndex < totalSlides - 1) {
+          goToSlide(currentIndex + 1);
+        }
+      }
+
+      function prevSlide() {
+        if (currentIndex > 0) {
+          goToSlide(currentIndex - 1);
+        }
+      }
+
+      function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        } else {
+          document.exitFullscreen().catch(() => {});
+        }
+      }
+
+      // Eventos de botones
+      prevBtn.addEventListener('click', prevSlide);
+      nextBtn.addEventListener('click', nextSlide);
+      gridBtn.addEventListener('click', openIndex);
+      slideCounter.addEventListener('click', openIndex);
+      closeIndexBtn.addEventListener('click', closeIndex);
+      fullscreenBtn.addEventListener('click', toggleFullscreen);
+
+      indexModal.addEventListener('click', (e) => {
+        if (e.target === indexModal) closeIndex();
+      });
+
+      // Controles por teclado
+      document.addEventListener('keydown', (e) => {
+        if (indexModal.classList.contains('open')) {
+          if (e.key === 'Escape' || e.key.toLowerCase() === 'g') {
+            e.preventDefault();
+            closeIndex();
+          }
+          return;
+        }
+
+        switch (e.key) {
+          case 'ArrowRight':
+          case 'PageDown':
+          case ' ':
+            e.preventDefault();
+            nextSlide();
+            break;
+          case 'ArrowLeft':
+          case 'PageUp':
+            e.preventDefault();
+            prevSlide();
+            break;
+          case 'Home':
+            e.preventDefault();
+            goToSlide(0);
+            break;
+          case 'End':
+            e.preventDefault();
+            goToSlide(totalSlides - 1);
+            break;
+          case 't':
+          case 'T':
+            e.preventDefault();
+            toggleTimer();
+            break;
+          case 'r':
+          case 'R':
+            e.preventDefault();
+            resetTimer();
+            break;
+          case 'g':
+          case 'G':
+            e.preventDefault();
+            openIndex();
+            break;
+          case 'f':
+          case 'F':
+            e.preventDefault();
+            toggleFullscreen();
+            break;
+          case 'h':
+          case 'H':
+            e.preventDefault();
+            document.body.classList.toggle('hud-hidden');
+            break;
+        }
+      });
+
+      // Atenuar barra inferior tras inactividad del ratón
+      let idleTimeout = null;
+      function resetIdle() {
+        navDock.classList.remove('idle');
+        clearTimeout(idleTimeout);
+        idleTimeout = setTimeout(() => {
+          navDock.classList.add('idle');
+        }, 2600);
+      }
+
+      document.addEventListener('mousemove', resetIdle);
+      resetIdle();
+    })();
+  </script>
+</body>
+</html>

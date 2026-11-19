@@ -1,0 +1,1562 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Simulador técnico interactivo de blockchains privadas: Quorum (Enterprise Ethereum) vs. Hyperledger Fabric." />
+  <title>Simulador Técnico: Quorum vs. Hyperledger Fabric</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Fuentes: Inter para UI y JetBrains Mono para datos criptográficos y logs -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    body {
+      background-color: #070b14;
+      color: #f1f5f9;
+      font-family: 'Inter', system-ui, sans-serif;
+      overflow-x: hidden;
+    }
+
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Scrollbars discretos de alto contraste */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    /* Interacción en nodos SVG */
+    .svg-node {
+      cursor: pointer;
+      transition: filter 0.2s ease;
+    }
+    .svg-node:hover {
+      filter: brightness(1.14);
+    }
+
+    /* Líneas de red punteadas animadas */
+    @keyframes dashFlow {
+      to {
+        stroke-dashoffset: -24;
+      }
+    }
+    .flow-line-active {
+      stroke-dasharray: 6 6;
+      animation: dashFlow 0.75s linear infinite;
+    }
+
+    /* Etiqueta de tecla rápida */
+    .kbd-hint {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 5px;
+      height: 17px;
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      border-radius: 4px;
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      color: inherit;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col bg-[#070b14] text-slate-100 selection:bg-sky-500/30 selection:text-sky-200">
+
+  <!-- ==================== BARRA SUPERIOR DE NAVEGACIÓN ==================== -->
+  <header class="sticky top-0 z-30 bg-[#0d1322]/95 backdrop-blur border-b border-slate-800 px-4 py-3 shadow-lg">
+    <div class="max-w-[1640px] mx-auto flex flex-wrap items-center justify-between gap-3">
+      
+      <!-- Identidad del Simulador -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-emerald-500 flex items-center justify-center shadow-md shadow-sky-500/20 shrink-0">
+          <svg class="w-6 h-6 text-slate-950" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+            <line x1="12" y1="22.08" x2="12" y2="12" />
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base sm:text-lg font-bold tracking-tight text-white">Blockchains Privadas: Simulador Técnico</h1>
+            <span class="hidden xl:inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-sky-500/15 text-sky-300 border border-sky-500/30">
+              Demo Interactiva en Vivo
+            </span>
+          </div>
+          <p class="text-xs text-slate-400">Privacidad, identidad criptográfica y flujos de consenso empresarial</p>
+        </div>
+      </div>
+
+      <!-- Selector de Plataforma (Pestañas Principales) -->
+      <nav class="flex items-center bg-slate-900/95 p-1 rounded-xl border border-slate-800" aria-label="Selector de plataforma">
+        <button id="tab-quorum" onclick="switchPlatform('quorum')"
+          class="px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 bg-sky-500 text-slate-950 shadow-sm">
+          <span class="w-2 h-2 rounded-full bg-slate-950"></span>
+          1. Quorum (Ethereum)
+          <span class="kbd-hint hidden sm:inline-flex">1</span>
+        </button>
+        <button id="tab-fabric" onclick="switchPlatform('fabric')"
+          class="px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 text-slate-300 hover:text-white">
+          <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          2. Hyperledger Fabric
+          <span class="kbd-hint hidden sm:inline-flex">2</span>
+        </button>
+      </nav>
+
+      <!-- Controles de Modo de Ejecución, Velocidad y Reinicio -->
+      <div class="flex flex-wrap items-center gap-2">
+        <!-- Modo: Automático vs Paso a Paso -->
+        <div class="flex items-center bg-slate-900 rounded-xl border border-slate-800 p-1 text-xs" title="El modo Paso a Paso pausa al final de cada fase para explicar con calma">
+          <button id="mode-auto" onclick="setStepMode(false)"
+            class="px-2.5 py-1.5 rounded-lg font-semibold bg-slate-700 text-white transition">
+            Auto
+          </button>
+          <button id="mode-step" onclick="setStepMode(true)"
+            class="px-2.5 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-white transition">
+            Paso a Paso
+          </button>
+        </div>
+
+        <!-- Selector de Velocidad -->
+        <div class="hidden sm:flex items-center bg-slate-900 rounded-xl border border-slate-800 p-1 text-xs">
+          <button id="speed-1x" onclick="setSpeed(1)"
+            class="px-2.5 py-1.5 rounded-lg font-semibold bg-slate-700 text-white transition">
+            1x
+          </button>
+          <button id="speed-05x" onclick="setSpeed(0.5)"
+            class="px-2.5 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-white transition"
+            title="Reduce la velocidad a la mitad para narrar en vivo">
+            0.5x
+          </button>
+        </div>
+
+        <!-- Botón Modal Comparativa Rápida -->
+        <button onclick="toggleCompareModal(true)"
+          class="px-3 py-2 rounded-xl text-xs font-semibold bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/40 transition flex items-center gap-1.5"
+          title="Ver tabla comparativa de identidad y arquitectura">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7" />
+          </svg>
+          <span class="hidden md:inline">0x vs X.509</span>
+        </button>
+
+        <!-- Botón Reiniciar Estado -->
+        <button onclick="resetSimulation()"
+          class="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1.5 shadow-sm"
+          title="Restaurar saldos, bloques y logs iniciales (Tecla R)">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span class="hidden sm:inline">Reiniciar</span>
+          <span class="kbd-hint hidden lg:inline-flex">R</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== ÁREA PRINCIPAL (68% DIAGRAMA / 32% INSPECTOR) ==================== -->
+  <main class="flex-1 max-w-[1640px] w-full mx-auto p-3 sm:p-4 flex flex-col lg:flex-row gap-4">
+
+    <!-- ==================== COLUMNA IZQUIERDA (68%): RED INTERACTIVA ==================== -->
+    <section class="w-full lg:w-[68%] flex flex-col gap-3">
+
+      <!-- Barra de Controles de Simulación -->
+      <div class="bg-[#0f172a] border border-slate-800 rounded-2xl p-3.5 shadow-md">
+        
+        <!-- CONTROLES QUORUM -->
+        <div id="controls-quorum" class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex flex-wrap items-center gap-2.5">
+            <!-- Selector de Consenso -->
+            <div class="flex flex-col">
+              <label for="quorum-consensus" class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 mb-1">Algoritmo de Consenso</label>
+              <select id="quorum-consensus" onchange="onQuorumConsensusChange()"
+                class="bg-slate-900 border border-slate-700 text-slate-100 text-xs font-medium rounded-xl px-3 py-2 focus:outline-none focus:border-sky-500">
+                <option value="QBFT">QBFT (3 Rondas · Tolerante Bizantino BFT)</option>
+                <option value="RAFT">Raft (Líder y Seguidores · CFT 50ms)</option>
+              </select>
+            </div>
+
+            <!-- Selector de Monto Privado -->
+            <div class="flex flex-col">
+              <label for="quorum-amount" class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 mb-1">Payload (privateFor: Banco B)</label>
+              <select id="quorum-amount"
+                class="bg-slate-900 border border-slate-700 text-slate-100 text-xs font-medium rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500">
+                <option value="50000">$50,000 USD (Liquidación Interbancaria)</option>
+                <option value="120000">$120,000 USD (Bono Tokenizado)</option>
+                <option value="15000">$15,000 USD (Pago Proveedor)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Botones de Acción Quorum -->
+          <div class="flex flex-wrap items-center gap-2">
+            <button id="btn-quorum-private" onclick="handlePrimaryAction()"
+              class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 shadow-md shadow-amber-500/20 transition flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+              <span id="btn-quorum-private-label">Enviar Tx Privada (A → B)</span>
+              <span class="kbd-hint hidden xl:inline-flex">Space</span>
+            </button>
+
+            <button id="btn-quorum-intrusion" onclick="runQuorumIntrusion()"
+              class="px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/40 transition flex items-center gap-1.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+              </svg>
+              Intrusión (Whitelist)
+            </button>
+          </div>
+        </div>
+
+        <!-- CONTROLES HYPERLEDGER FABRIC -->
+        <div id="controls-fabric" class="hidden flex-wrap items-center justify-between gap-3">
+          <div class="flex flex-wrap items-center gap-2.5">
+            <!-- Selector de Identidad X.509 -->
+            <div class="flex flex-col">
+              <label for="fabric-identity" class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 mb-1">Identidad Firmante (Certificado X.509)</label>
+              <select id="fabric-identity" onchange="onFabricIdentityChange()"
+                class="bg-slate-900 border border-slate-700 text-slate-100 text-xs font-medium rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500">
+                <option value="valid">User1@Org1 (Certificado X.509 Válido · Org1MSP)</option>
+                <option value="revoked">Intruder@Org3 (Certificado Revocado / Fuera de Canal)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Botones de Acción Fabric -->
+          <div class="flex flex-wrap items-center gap-2">
+            <button id="btn-fabric-tx" onclick="handlePrimaryAction()"
+              class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 shadow-md shadow-emerald-500/20 transition flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+                <polygon points="5 3 19 12 5 21 5 3" />
+              </svg>
+              <span id="btn-fabric-tx-label">Ejecutar (Execute → Order → Validate)</span>
+              <span class="kbd-hint hidden xl:inline-flex">Space</span>
+            </button>
+
+            <button id="btn-fabric-mvcc" onclick="runFabricFlow(true)"
+              class="px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/40 transition flex items-center gap-1.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+              </svg>
+              Doble Gasto (MVCC)
+            </button>
+          </div>
+        </div>
+
+        <!-- Barra de Progreso / Fase Actual en Vivo + Botón Siguiente Paso -->
+        <div class="mt-3 pt-2.5 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div class="flex items-center gap-2 flex-1 min-w-[240px]">
+            <span id="phase-indicator-dot" class="w-2.5 h-2.5 rounded-full bg-sky-400 shrink-0"></span>
+            <span class="font-semibold text-slate-300 shrink-0">Fase:</span>
+            <span id="phase-status-text" class="text-sky-300 font-medium">Listo. Haz clic en el botón principal o selecciona un nodo para inspeccionarlo.</span>
+          </div>
+
+          <!-- Botón visible únicamente cuando está pausado en Modo Paso a Paso -->
+          <button id="btn-next-step" onclick="resumeNextStep()"
+            class="hidden px-3 py-1 rounded-lg text-xs font-bold bg-amber-400 hover:bg-amber-300 text-slate-950 shadow animate-pulse items-center gap-1.5">
+            <span>Continuar Siguiente Fase →</span>
+            <span class="kbd-hint">Space</span>
+          </button>
+
+          <span id="hint-click-node" class="text-[11px] text-slate-400 flex items-center gap-1 shrink-0">
+            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5" />
+            </svg>
+            Clic en cualquier nodo para ver su BD
+          </span>
+        </div>
+      </div>
+
+      <!-- Lienzo SVG Interactivo de la Topología -->
+      <div class="relative flex-1 bg-[#0b1120] border border-slate-800 rounded-2xl overflow-hidden shadow-xl flex items-center justify-center min-h-[450px]">
+        <!-- Cuadrícula técnica -->
+        <div class="absolute inset-0 opacity-20 pointer-events-none"
+             style="background-image: radial-gradient(#334155 1px, transparent 1px); background-size: 22px 22px;"></div>
+
+        <!-- ==================== SVG DIAGRAMA 1: QUORUM ==================== -->
+        <svg id="svg-quorum" viewBox="0 0 880 530" class="w-full h-full max-h-[600px] select-none relative z-10">
+          <defs>
+            <filter id="glow-amber" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+            <filter id="glow-cyan" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+            <filter id="glow-red" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+          </defs>
+
+          <!-- Perímetro de Red Permisionada (Whitelist enode) -->
+          <rect x="24" y="20" width="635" height="490" rx="22" fill="#0f172a" fill-opacity="0.55"
+                stroke="#1e293b" stroke-width="2" stroke-dasharray="8 6" />
+          <text x="44" y="46" fill="#38bdf8" font-size="11.5" font-weight="700" letter-spacing="0.06em">
+            RED PERMISIONADA QUORUM (WHITELIST ENODE ACTIVA · GAS = 0)
+          </text>
+
+          <!-- Indicador Dinámico de Algoritmo de Consenso en el Centro -->
+          <g id="q-consensus-hub" transform="translate(230, 224)">
+            <rect x="0" y="0" width="210" height="58" rx="12" fill="#0f172a" stroke="#38bdf8" stroke-opacity="0.45" stroke-width="1.3" />
+            <text id="q-consensus-title" x="105" y="20" text-anchor="middle" fill="#38bdf8" font-size="10.5" font-weight="700">
+              CONSENSO: QBFT (BFT)
+            </text>
+            <text id="q-consensus-sub" x="105" y="36" text-anchor="middle" fill="#94a3b8" font-size="9">
+              Pre-prepare → Prepare → Commit (2/3)
+            </text>
+            <text id="q-consensus-round" x="105" y="50" text-anchor="middle" fill="#64748b" font-size="8.5" class="mono">
+              Estado: Esperando propuesta de bloque
+            </text>
+          </g>
+
+          <!-- Conexiones de Red -->
+          <!-- Canal Privado Punto a Punto Tessera A <-> Tessera B -->
+          <line id="q-line-tessera" x1="255" y1="158" x2="415" y2="158" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="6 5" opacity="0.7" />
+          <rect x="274" y="136" width="122" height="18" rx="6" fill="#1e1b18" stroke="#f59e0b" stroke-opacity="0.5" />
+          <text x="335" y="148" text-anchor="middle" fill="#fbbf24" font-size="9.5" font-weight="600">HTTPS Cifrado P2P</text>
+
+          <!-- Red P2P Consenso (Hashes Públicos) -->
+          <line id="q-line-p2p-ab" x1="255" y1="95" x2="415" y2="95" stroke="#38bdf8" stroke-width="2" opacity="0.45" />
+          <line id="q-line-p2p-ac" x1="165" y1="205" x2="265" y2="320" stroke="#38bdf8" stroke-width="2" opacity="0.45" />
+          <line id="q-line-p2p-bc" x1="505" y1="205" x2="405" y2="320" stroke="#38bdf8" stroke-width="2" opacity="0.45" />
+          <text x="335" y="84" text-anchor="middle" fill="#7dd3fc" font-size="9.5" font-weight="600">Consenso P2P (Solo Hashes)</text>
+
+          <!-- Línea de Intrusión Externa -> Firewall Whitelist -->
+          <line id="q-line-intruder" x1="695" y1="265" x2="645" y2="265" stroke="#f43f5e" stroke-width="2.5" stroke-dasharray="5 5" opacity="0.5" />
+          <!-- Escudo Whitelist en el borde -->
+          <g transform="translate(642, 241)">
+            <rect x="0" y="0" width="34" height="48" rx="8" fill="#1e293b" stroke="#f43f5e" stroke-width="2" />
+            <text x="17" y="18" text-anchor="middle" fill="#fda4af" font-size="8.5" font-weight="800">ACL</text>
+            <!-- Icono Escudo Vectorial -->
+            <path d="M17 23 L24 26 V32 C24 36.5 21 40 17 41.5 C13 40 10 36.5 10 32 V26 Z" fill="none" stroke="#f43f5e" stroke-width="1.8" />
+          </g>
+
+          <!-- NODO 1: BANCO A (EMISOR) -->
+          <g id="node-q-bankA" class="svg-node" onclick="selectNode('q-bankA')" transform="translate(45, 62)">
+            <rect id="ring-q-bankA" x="-4" y="-4" width="218" height="148" rx="18" fill="none" stroke="#38bdf8" stroke-width="2.5" opacity="1" />
+            <rect x="0" y="0" width="210" height="140" rx="14" fill="#111827" stroke="#334155" stroke-width="1.5" />
+            <rect x="0" y="0" width="210" height="30" rx="14" fill="#1e293b" />
+            <!-- Icono Banco Vectorial -->
+            <path d="M14 13 L21 9 L28 13 M15 13 V20 M19 13 V20 M23 13 V20 M27 13 V20 M13 21 H29" stroke="#38bdf8" stroke-width="1.5" fill="none" />
+            <text x="34" y="20" fill="#f8fafc" font-size="11.5" font-weight="700">Banco A (Emisor)</text>
+            <text id="q-bankA-role-tag" x="198" y="20" text-anchor="end" fill="#38bdf8" font-size="9.5" font-weight="700">Validador</text>
+
+            <!-- Sub-cajas internas -->
+            <rect x="10" y="38" width="90" height="42" rx="8" fill="#0f172a" stroke="#38bdf8" stroke-opacity="0.5" />
+            <text x="55" y="54" text-anchor="middle" fill="#7dd3fc" font-size="9" font-weight="700">Estado Público</text>
+            <text id="q-bankA-pub-label" x="55" y="70" text-anchor="middle" fill="#cbd5e1" font-size="9" class="mono">Bloque #10</text>
+
+            <rect x="108" y="38" width="92" height="42" rx="8" fill="#1c1917" stroke="#f59e0b" stroke-opacity="0.6" />
+            <text x="154" y="54" text-anchor="middle" fill="#fbbf24" font-size="9" font-weight="700">Estado Privado</text>
+            <text id="q-bankA-priv-label" x="154" y="70" text-anchor="middle" fill="#fde68a" font-size="9" class="mono">$200,000</text>
+
+            <rect x="10" y="88" width="190" height="40" rx="8" fill="#271c10" stroke="#f59e0b" stroke-width="1.2" />
+            <text x="105" y="105" text-anchor="middle" fill="#fbbf24" font-size="9.5" font-weight="700">Tessera A (Enclave + Cifrado)</text>
+            <text x="105" y="119" text-anchor="middle" fill="#fcd34d" font-size="8.5" class="mono">pubKey: BULeR8JyUWhiuuCM...</text>
+          </g>
+
+          <!-- NODO 2: BANCO B (RECEPTOR AUTORIZADO) -->
+          <g id="node-q-bankB" class="svg-node" onclick="selectNode('q-bankB')" transform="translate(415, 62)">
+            <rect id="ring-q-bankB" x="-4" y="-4" width="218" height="148" rx="18" fill="none" stroke="#38bdf8" stroke-width="2.5" opacity="0" />
+            <rect x="0" y="0" width="210" height="140" rx="14" fill="#111827" stroke="#334155" stroke-width="1.5" />
+            <rect x="0" y="0" width="210" height="30" rx="14" fill="#1e293b" />
+            <path d="M14 13 L21 9 L28 13 M15 13 V20 M19 13 V20 M23 13 V20 M27 13 V20 M13 21 H29" stroke="#38bdf8" stroke-width="1.5" fill="none" />
+            <text x="34" y="20" fill="#f8fafc" font-size="11.5" font-weight="700">Banco B (Receptor)</text>
+            <text id="q-bankB-role-tag" x="198" y="20" text-anchor="end" fill="#38bdf8" font-size="9.5" font-weight="700">Validador</text>
+
+            <rect x="10" y="38" width="90" height="42" rx="8" fill="#0f172a" stroke="#38bdf8" stroke-opacity="0.5" />
+            <text x="55" y="54" text-anchor="middle" fill="#7dd3fc" font-size="9" font-weight="700">Estado Público</text>
+            <text id="q-bankB-pub-label" x="55" y="70" text-anchor="middle" fill="#cbd5e1" font-size="9" class="mono">Bloque #10</text>
+
+            <rect x="108" y="38" width="92" height="42" rx="8" fill="#1c1917" stroke="#f59e0b" stroke-opacity="0.6" />
+            <text x="154" y="54" text-anchor="middle" fill="#fbbf24" font-size="9" font-weight="700">Estado Privado</text>
+            <text id="q-bankB-priv-label" x="154" y="70" text-anchor="middle" fill="#fde68a" font-size="9" class="mono">$80,000</text>
+
+            <rect x="10" y="88" width="190" height="40" rx="8" fill="#271c10" stroke="#f59e0b" stroke-width="1.2" />
+            <text x="105" y="105" text-anchor="middle" fill="#fbbf24" font-size="9.5" font-weight="700">Tessera B (Enclave + Cifrado)</text>
+            <text x="105" y="119" text-anchor="middle" fill="#fcd34d" font-size="8.5" class="mono">pubKey: QfeDAys9MPDs2XHExt...</text>
+          </g>
+
+          <!-- NODO 3: BANCO C (OBSERVADOR SIN LLAVE) -->
+          <g id="node-q-bankC" class="svg-node" onclick="selectNode('q-bankC')" transform="translate(230, 320)">
+            <rect id="ring-q-bankC" x="-4" y="-4" width="218" height="148" rx="18" fill="none" stroke="#38bdf8" stroke-width="2.5" opacity="0" />
+            <rect x="0" y="0" width="210" height="140" rx="14" fill="#111827" stroke="#334155" stroke-width="1.5" />
+            <rect x="0" y="0" width="210" height="30" rx="14" fill="#1e293b" />
+            <path d="M14 13 L21 9 L28 13 M15 13 V20 M19 13 V20 M23 13 V20 M27 13 V20 M13 21 H29" stroke="#94a3b8" stroke-width="1.5" fill="none" />
+            <text x="34" y="20" fill="#f8fafc" font-size="11.5" font-weight="700">Banco C (Sin Llave)</text>
+            <text id="q-bankC-role-tag" x="198" y="20" text-anchor="end" fill="#94a3b8" font-size="9.5" font-weight="700">Validador</text>
+
+            <rect x="10" y="38" width="90" height="42" rx="8" fill="#0f172a" stroke="#38bdf8" stroke-opacity="0.5" />
+            <text x="55" y="54" text-anchor="middle" fill="#7dd3fc" font-size="9" font-weight="700">Estado Público</text>
+            <text id="q-bankC-pub-label" x="55" y="70" text-anchor="middle" fill="#cbd5e1" font-size="9" class="mono">Bloque #10</text>
+
+            <rect x="108" y="38" width="92" height="42" rx="8" fill="#0f172a" stroke="#475569" stroke-dasharray="3 3" />
+            <text x="154" y="54" text-anchor="middle" fill="#94a3b8" font-size="9" font-weight="700">Estado Privado</text>
+            <text x="154" y="70" text-anchor="middle" fill="#64748b" font-size="8.5" class="mono">Sin Acceso</text>
+
+            <rect x="10" y="88" width="190" height="40" rx="8" fill="#1e293b" stroke="#475569" stroke-width="1" />
+            <text x="105" y="105" text-anchor="middle" fill="#94a3b8" font-size="9.5" font-weight="600">Tessera C (No destinatario)</text>
+            <text x="105" y="119" text-anchor="middle" fill="#64748b" font-size="8.5">Ignora hashes sin payload local</text>
+          </g>
+
+          <!-- NODO 4: NODO EXTERNO NO AUTORIZADO -->
+          <g id="node-q-intruder" class="svg-node" onclick="selectNode('q-intruder')" transform="translate(690, 195)">
+            <rect id="ring-q-intruder" x="-4" y="-4" width="176" height="148" rx="18" fill="none" stroke="#f43f5e" stroke-width="2.5" opacity="0" />
+            <rect x="0" y="0" width="168" height="140" rx="14" fill="#180d14" stroke="#f43f5e" stroke-opacity="0.6" stroke-width="1.5" />
+            <rect x="0" y="0" width="168" height="30" rx="14" fill="#3b1222" />
+            <text x="84" y="20" text-anchor="middle" fill="#fda4af" font-size="11.5" font-weight="700">Nodo Externo</text>
+            <text x="84" y="52" text-anchor="middle" fill="#fecdd3" font-size="10" font-weight="600">Fuera de Whitelist</text>
+            <rect x="10" y="64" width="148" height="36" rx="8" fill="#0f172a" stroke="#f43f5e" stroke-opacity="0.4" />
+            <text x="84" y="79" text-anchor="middle" fill="#f43f5e" font-size="8.5" class="mono">enode://99a4f1...</text>
+            <text x="84" y="92" text-anchor="middle" fill="#94a3b8" font-size="8">No en permissioned-nodes</text>
+            <text x="84" y="122" text-anchor="middle" fill="#fda4af" font-size="9.5" font-weight="700">Acceso P2P Bloqueado</text>
+          </g>
+
+          <!-- PAQUETES ANIMADOS QUORUM -->
+          <g id="q-pkt-private" opacity="0" transform="translate(210, 158)">
+            <rect x="-54" y="-14" width="108" height="28" rx="14" fill="#f59e0b" filter="url(#glow-amber)" />
+            <text x="0" y="4" text-anchor="middle" fill="#090d16" font-size="9.5" font-weight="800">Payload AES-256</text>
+          </g>
+
+          <g id="q-pkt-hash-ab" opacity="0" transform="translate(255, 95)">
+            <rect x="-44" y="-13" width="88" height="26" rx="13" fill="#38bdf8" filter="url(#glow-cyan)" />
+            <text x="0" y="4" text-anchor="middle" fill="#090d16" font-size="9.5" font-weight="800"># Hash 0x9f8a</text>
+          </g>
+          <g id="q-pkt-hash-ac" opacity="0" transform="translate(165, 205)">
+            <rect x="-44" y="-13" width="88" height="26" rx="13" fill="#38bdf8" filter="url(#glow-cyan)" />
+            <text x="0" y="4" text-anchor="middle" fill="#090d16" font-size="9.5" font-weight="800"># Hash 0x9f8a</text>
+          </g>
+
+          <g id="q-pkt-intruder" opacity="0" transform="translate(710, 265)">
+            <rect x="-44" y="-13" width="88" height="26" rx="13" fill="#f43f5e" filter="url(#glow-red)" />
+            <text x="0" y="4" text-anchor="middle" fill="#ffffff" font-size="9.5" font-weight="800">✕ Handshake</text>
+          </g>
+        </svg>
+
+        <!-- ==================== SVG DIAGRAMA 2: HYPERLEDGER FABRIC ==================== -->
+        <svg id="svg-fabric" viewBox="0 0 880 530" class="hidden w-full h-full max-h-[600px] select-none relative z-10">
+          <defs>
+            <filter id="glow-emerald" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+            <filter id="glow-violet" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+          </defs>
+
+          <!-- Contenedor del Canal Privado Principal -->
+          <rect x="235" y="18" width="623" height="415" rx="22" fill="#0f172a" fill-opacity="0.55"
+                stroke="#10b981" stroke-opacity="0.38" stroke-width="2" stroke-dasharray="8 6" />
+          <text x="255" y="42" fill="#34d399" font-size="11" font-weight="700" letter-spacing="0.05em">
+            CANAL AISLADO: "canal-bancos" (ORG 1 + ORG 2 · EXECUTE → ORDER → VALIDATE)
+          </text>
+
+          <!-- Líneas de Flujo Fabric -->
+          <!-- Cliente <-> CA/MSP -->
+          <line id="f-line-msp" x1="115" y1="185" x2="115" y2="285" stroke="#38bdf8" stroke-width="2" stroke-dasharray="5 5" opacity="0.6" />
+          <!-- Cliente -> Endorsing Peer 1 & 2 (Fase 1 Execute) -->
+          <line id="f-line-exec1" x1="205" y1="102" x2="265" y2="102" stroke="#10b981" stroke-width="2.2" opacity="0.45" />
+          <line id="f-line-exec2" x1="205" y1="132" x2="265" y2="232" stroke="#10b981" stroke-width="2.2" opacity="0.45" />
+          <!-- Cliente -> Ordering Service (Fase 2 Order) -->
+          <path id="f-line-order" d="M 155 185 L 155 370 L 265 370" fill="none" stroke="#a855f7" stroke-width="2.2" opacity="0.45" />
+          <!-- Ordering Service -> Committer Peers (Fase 3 Validate) -->
+          <line id="f-line-val1" x1="505" y1="368" x2="575" y2="235" stroke="#38bdf8" stroke-width="2.2" opacity="0.45" />
+          <line id="f-line-val2" x1="505" y1="352" x2="575" y2="120" stroke="#38bdf8" stroke-width="2.2" opacity="0.45" />
+
+          <!-- NODO 1: CLIENTE SDK -->
+          <g id="node-f-client" class="svg-node" onclick="selectNode('f-client')" transform="translate(25, 65)">
+            <rect id="ring-f-client" x="-4" y="-4" width="188" height="128" rx="18" fill="none" stroke="#10b981" stroke-width="2.5" opacity="0" />
+            <rect x="0" y="0" width="180" height="120" rx="14" fill="#111827" stroke="#334155" stroke-width="1.5" />
+            <rect x="0" y="0" width="180" height="28" rx="14" fill="#1e293b" />
+            <text x="90" y="19" text-anchor="middle" fill="#f8fafc" font-size="11.5" font-weight="700">Aplicación Cliente SDK</text>
+            <text x="90" y="48" text-anchor="middle" fill="#94a3b8" font-size="9.5">Credencial X.509 Activa:</text>
+            <rect x="12" y="56" width="156" height="32" rx="8" fill="#064e3b" fill-opacity="0.5" stroke="#10b981" stroke-opacity="0.6" />
+            <text id="f-client-id-badge" x="90" y="76" text-anchor="middle" fill="#6ee7b7" font-size="9.5" font-weight="700" class="mono">User1@Org1 (X.509)</text>
+            <text x="90" y="106" text-anchor="middle" fill="#64748b" font-size="8.5">Identidad PKI (Sin dirección 0x)</text>
+          </g>
+
+          <!-- NODO 2: CA & MSP (IDENTIDAD Y PERMISOS) -->
+          <g id="node-f-msp" class="svg-node" onclick="selectNode('f-msp')" transform="translate(25, 285)">
+            <rect id="ring-f-msp" x="-4" y="-4" width="188" height="148" rx="18" fill="none" stroke="#38bdf8" stroke-width="2.5" opacity="0" />
+            <rect x="0" y="0" width="180" height="140" rx="14" fill="#111827" stroke="#38bdf8" stroke-opacity="0.5" stroke-width="1.5" />
+            <rect x="0" y="0" width="180" height="28" rx="14" fill="#0c4a6e" />
+            <text x="90" y="19" text-anchor="middle" fill="#e0f2fe" font-size="11.5" font-weight="700">CA &amp; MSP (Identidad)</text>
+            <text x="90" y="48" text-anchor="middle" fill="#7dd3fc" font-size="9.5" font-weight="600">Autoridad Certificadora</text>
+            <rect x="12" y="58" width="156" height="42" rx="8" fill="#0f172a" stroke="#334155" />
+            <text x="90" y="75" text-anchor="middle" fill="#cbd5e1" font-size="8.5" class="mono">Estándar X.509 PKI</text>
+            <text x="90" y="90" text-anchor="middle" fill="#38bdf8" font-size="8.5" class="mono">Org1MSP · Org2MSP</text>
+            <text id="f-msp-status-txt" x="90" y="122" text-anchor="middle" fill="#94a3b8" font-size="8.5">Valida firmas y membresía</text>
+          </g>
+
+          <!-- NODO 3: ENDORSING PEER ORG 1 -->
+          <g id="node-f-ep1" class="svg-node" onclick="selectNode('f-ep1')" transform="translate(265, 58)">
+            <rect id="ring-f-ep1" x="-4" y="-4" width="248" height="118" rx="18" fill="none" stroke="#10b981" stroke-width="2.5" opacity="1" />
+            <rect x="0" y="0" width="240" height="110" rx="14" fill="#111827" stroke="#10b981" stroke-opacity="0.5" stroke-width="1.5" />
+            <rect x="0" y="0" width="240" height="26" rx="14" fill="#064e3b" />
+            <text x="12" y="18" fill="#ecfdf5" font-size="11" font-weight="700">Endorsing Peer (Org 1)</text>
+            <text x="228" y="18" text-anchor="end" fill="#6ee7b7" font-size="9" font-weight="700">FASE 1</text>
+
+            <rect x="10" y="34" width="220" height="36" rx="8" fill="#0f172a" stroke="#10b981" stroke-opacity="0.4" />
+            <text x="120" y="49" text-anchor="middle" fill="#34d399" font-size="9.5" font-weight="700">Chaincode (Contenedor Docker)</text>
+            <text x="120" y="63" text-anchor="middle" fill="#94a3b8" font-size="8.5" class="mono">Simula Go/NodeJS → RW-Set</text>
+
+            <text x="120" y="88" text-anchor="middle" fill="#cbd5e1" font-size="9">Política: <tspan fill="#6ee7b7" font-weight="700">AND('Org1', 'Org2')</tspan></text>
+            <text x="120" y="102" text-anchor="middle" fill="#64748b" font-size="8">No modifica el Ledger aún</text>
+          </g>
+
+          <!-- NODO 4: ENDORSING PEER ORG 2 -->
+          <g id="node-f-ep2" class="svg-node" onclick="selectNode('f-ep2')" transform="translate(265, 184)">
+            <rect id="ring-f-ep2" x="-4" y="-4" width="248" height="118" rx="18" fill="none" stroke="#10b981" stroke-width="2.5" opacity="0" />
+            <rect x="0" y="0" width="240" height="110" rx="14" fill="#111827" stroke="#10b981" stroke-opacity="0.5" stroke-width="1.5" />
+            <rect x="0" y="0" width="240" height="26" rx="14" fill="#064e3b" />
+            <text x="12" y="18" fill="#ecfdf5" font-size="11" font-weight="700">Endorsing Peer (Org 2)</text>
+            <text x="228" y="18" text-anchor="end" fill="#6ee7b7" font-size="9" font-weight="700">FASE 1</text>
+
+            <rect x="10" y="34" width="220" height="36" rx="8" fill="#0f172a" stroke="#10b981" stroke-opacity="0.4" />
+            <text x="120" y="49" text-anchor="middle" fill="#34d399" font-size="9.5" font-weight="700">Chaincode (Contenedor Docker)</text>
+            <text x="120" y="63" text-anchor="middle" fill="#94a3b8" font-size="8.5" class="mono">Simulación paralela → Firma Aval</text>
+
+            <text x="120" y="88" text-anchor="middle" fill="#cbd5e1" font-size="9">Retorna <tspan fill="#6ee7b7" font-weight="700">Read/Write Set</tspan></text>
+            <text x="120" y="102" text-anchor="middle" fill="#64748b" font-size="8">Aislamiento por contenedor</text>
+          </g>
+
+          <!-- NODO 5: ORDERING SERVICE (RAFT) -->
+          <g id="node-f-orderer" class="svg-node" onclick="selectNode('f-orderer')" transform="translate(265, 310)">
+            <rect id="ring-f-orderer" x="-4" y="-4" width="248" height="114" rx="18" fill="none" stroke="#a855f7" stroke-width="2.5" opacity="0" />
+            <rect x="0" y="0" width="240" height="106" rx="14" fill="#111827" stroke="#a855f7" stroke-opacity="0.6" stroke-width="1.5" />
+            <rect x="0" y="0" width="240" height="26" rx="14" fill="#3b0764" />
+            <text x="12" y="18" fill="#f3e8ff" font-size="11" font-weight="700">Ordering Service (Raft)</text>
+            <text x="228" y="18" text-anchor="end" fill="#d8b4fe" font-size="9" font-weight="700">FASE 2</text>
+
+            <rect x="10" y="34" width="220" height="34" rx="8" fill="#1e1035" stroke="#a855f7" stroke-opacity="0.4" />
+            <text x="120" y="48" text-anchor="middle" fill="#d8b4fe" font-size="9.5" font-weight="700">Ordenamiento Cronológico</text>
+            <text x="120" y="61" text-anchor="middle" fill="#e9d5ff" font-size="8.5" class="mono">NO ejecuta Chaincode (Alta velocidad)</text>
+
+            <text id="f-orderer-block-label" x="120" y="90" text-anchor="middle" fill="#cbd5e1" font-size="9.5" class="mono">Último Bloque Empaquetado: #4</text>
+          </g>
+
+          <!-- NODO 6: COMMITTER PEERS + WORLD STATE (COUCHDB) -->
+          <g id="node-f-committer" class="svg-node" onclick="selectNode('f-committer')" transform="translate(575, 78)">
+            <rect id="ring-f-committer" x="-4" y="-4" width="272" height="328" rx="18" fill="none" stroke="#38bdf8" stroke-width="2.5" opacity="0" />
+            <rect x="0" y="0" width="264" height="320" rx="14" fill="#111827" stroke="#38bdf8" stroke-opacity="0.55" stroke-width="1.5" />
+            <rect x="0" y="0" width="264" height="28" rx="14" fill="#0c4a6e" />
+            <text x="12" y="19" fill="#f0f9ff" font-size="11" font-weight="700">Committer Peers (Canal)</text>
+            <text x="252" y="19" text-anchor="end" fill="#7dd3fc" font-size="9" font-weight="700">FASE 3</text>
+
+            <!-- Paso de Validación MVCC -->
+            <rect x="12" y="38" width="240" height="72" rx="10" fill="#0f172a" stroke="#38bdf8" stroke-opacity="0.4" />
+            <text x="132" y="56" text-anchor="middle" fill="#7dd3fc" font-size="10" font-weight="700">Validación Sin Re-ejecutar</text>
+            <text x="132" y="74" text-anchor="middle" fill="#cbd5e1" font-size="8.5">1. Verifica firmas de aval (Org1 + Org2)</text>
+            <text id="f-mvcc-status" x="132" y="94" text-anchor="middle" fill="#34d399" font-size="8.5" font-weight="700" class="mono">2. Check MVCC: Versión v1 OK</text>
+
+            <!-- Ledger: World State (CouchDB) -->
+            <rect x="12" y="122" width="240" height="82" rx="10" fill="#064e3b" fill-opacity="0.35" stroke="#10b981" stroke-opacity="0.6" />
+            <text x="132" y="141" text-anchor="middle" fill="#6ee7b7" font-size="10" font-weight="700">World State (CouchDB)</text>
+            <text id="f-ws-asset" x="132" y="161" text-anchor="middle" fill="#ecfdf5" font-size="9.5" class="mono">Activo: ACT-01 | Org1MSP</text>
+            <text id="f-ws-val" x="132" y="181" text-anchor="middle" fill="#a7f3d0" font-size="9" class="mono">Valor: $50,000 | Ver: v1</text>
+
+            <!-- Ledger: Blockchain Historial Inmutable -->
+            <rect x="12" y="216" width="240" height="88" rx="10" fill="#0f172a" stroke="#475569" />
+            <text x="132" y="235" text-anchor="middle" fill="#94a3b8" font-size="10" font-weight="700">Blockchain (Historial Inmutable)</text>
+            <text id="f-bc-blocks" x="132" y="256" text-anchor="middle" fill="#cbd5e1" font-size="9" class="mono">Bloques: #0 → #1 → #2 → #3 → #4</text>
+            <text x="132" y="276" text-anchor="middle" fill="#64748b" font-size="8">Registra Tx VALID e INVALID (auditoría)</text>
+          </g>
+
+          <!-- NODO 7: ORG 3 AISLADA EN OTRO CANAL -->
+          <g id="node-f-org3" class="svg-node" onclick="selectNode('f-org3')" transform="translate(235, 444)">
+            <rect id="ring-f-org3" x="-4" y="-4" width="631" height="58" rx="14" fill="none" stroke="#94a3b8" stroke-width="2" opacity="0" />
+            <rect x="0" y="0" width="623" height="50" rx="12" fill="#0f172a" stroke="#475569" stroke-dasharray="5 4" stroke-width="1.3" />
+            <text x="16" y="22" fill="#cbd5e1" font-size="10.5" font-weight="700">Org 3 (Peer Aislado en "canal-logistica")</text>
+            <text x="16" y="38" fill="#64748b" font-size="9">Aislamiento físico por Canal: Org 3 NO recibe bloques ni conoce la existencia de "canal-bancos".</text>
+            <rect x="495" y="12" width="114" height="26" rx="7" fill="#1e293b" stroke="#475569" />
+            <text x="552" y="29" text-anchor="middle" fill="#94a3b8" font-size="9" font-weight="700" class="mono">0 Bloques Recibidos</text>
+          </g>
+
+          <!-- PAQUETES ANIMADOS FABRIC -->
+          <g id="f-pkt-msp" opacity="0" transform="translate(115, 185)">
+            <rect x="-46" y="-13" width="92" height="26" rx="13" fill="#38bdf8" filter="url(#glow-cyan)" />
+            <text x="0" y="4" text-anchor="middle" fill="#090d16" font-size="9" font-weight="800">Cert X.509</text>
+          </g>
+
+          <g id="f-pkt-exec1" opacity="0" transform="translate(205, 102)">
+            <rect x="-46" y="-13" width="92" height="26" rx="13" fill="#10b981" filter="url(#glow-emerald)" />
+            <text id="f-pkt-exec1-txt" x="0" y="4" text-anchor="middle" fill="#090d16" font-size="9" font-weight="800">Propuesta</text>
+          </g>
+          <g id="f-pkt-exec2" opacity="0" transform="translate(205, 132)">
+            <rect x="-46" y="-13" width="92" height="26" rx="13" fill="#10b981" filter="url(#glow-emerald)" />
+            <text id="f-pkt-exec2-txt" x="0" y="4" text-anchor="middle" fill="#090d16" font-size="9" font-weight="800">Propuesta</text>
+          </g>
+
+          <g id="f-pkt-order" opacity="0" transform="translate(155, 185)">
+            <rect x="-54" y="-13" width="108" height="26" rx="13" fill="#a855f7" filter="url(#glow-violet)" />
+            <text x="0" y="4" text-anchor="middle" fill="#ffffff" font-size="9" font-weight="800">RW-Set + Avales</text>
+          </g>
+
+          <g id="f-pkt-val" opacity="0" transform="translate(505, 368)">
+            <rect x="-46" y="-13" width="92" height="26" rx="13" fill="#38bdf8" filter="url(#glow-cyan)" />
+            <text id="f-pkt-val-txt" x="0" y="4" text-anchor="middle" fill="#090d16" font-size="9" font-weight="800">Bloque #5</text>
+          </g>
+        </svg>
+
+        <!-- Leyenda Inferior Flotante -->
+        <div class="absolute bottom-3 left-3 right-3 z-20 flex flex-wrap items-center justify-between gap-2 bg-slate-950/85 backdrop-blur border border-slate-800/90 px-3.5 py-2 rounded-xl text-[11px] text-slate-300">
+          <div id="legend-quorum" class="flex flex-wrap items-center gap-4">
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>Datos Privados Cifrados (Tessera P2P)</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span>Consenso Público (Solo Hashes)</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>Rechazo Whitelist (enode)</span>
+          </div>
+          <div id="legend-fabric" class="hidden flex-wrap items-center gap-4">
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>Fase 1: Execute (Aval paralelo)</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-purple-400"></span>Fase 2: Order (Raft)</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span>Fase 3: Validate (MVCC + CouchDB)</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== COLUMNA DERECHA (32%): PANEL INSPECTOR TÉCNICO ==================== -->
+    <aside class="w-full lg:w-[32%] flex flex-col gap-3">
+
+      <!-- BLOQUE A: IDENTIDAD Y PAYLOAD CRIPTOGRÁFICO -->
+      <div class="bg-[#0f172a] border border-slate-800 rounded-2xl p-3.5 shadow-md">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+            A. Identidad y Payload Criptográfico
+          </h2>
+          <span id="inspector-id-type" class="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-sky-500/15 text-sky-300 border border-sky-500/30">
+            Cuenta 0x... (EVM)
+          </span>
+        </div>
+        <pre id="inspector-crypto-box" class="mono text-[11px] leading-relaxed bg-[#070b14] border border-slate-800/90 rounded-xl p-3 text-slate-200 overflow-x-auto max-h-[160px]"></pre>
+      </div>
+
+      <!-- BLOQUE B: INSPECTOR DE BASE DE DATOS / LEDGER DEL NODO SELECCIONADO -->
+      <div class="bg-[#0f172a] border border-slate-800 rounded-2xl p-3.5 shadow-md">
+        <div class="flex items-center justify-between gap-2 mb-2">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            B. Base de Datos del Nodo
+          </h2>
+          <span id="inspector-selected-node" class="text-[11px] font-bold px-2.5 py-0.5 rounded-md bg-slate-800 text-emerald-300 border border-slate-700 truncate">
+            Banco A (Geth + Tessera)
+          </span>
+        </div>
+
+        <!-- Selector rápido de nodos para comparar estados en 1 clic durante la exposición -->
+        <div id="quick-nodes-quorum" class="flex flex-wrap gap-1.5 mb-2">
+          <button onclick="selectNode('q-bankA')" class="px-2 py-1 rounded-md text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">Banco A</button>
+          <button onclick="selectNode('q-bankB')" class="px-2 py-1 rounded-md text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">Banco B</button>
+          <button onclick="selectNode('q-bankC')" class="px-2 py-1 rounded-md text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700">Banco C (Sin Llave)</button>
+        </div>
+        <div id="quick-nodes-fabric" class="hidden flex-wrap gap-1.5 mb-2">
+          <button onclick="selectNode('f-ep1')" class="px-2 py-1 rounded-md text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">Endorser Org1</button>
+          <button onclick="selectNode('f-orderer')" class="px-2 py-1 rounded-md text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">Orderer Raft</button>
+          <button onclick="selectNode('f-committer')" class="px-2 py-1 rounded-md text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-slate-700">CouchDB + Bloques</button>
+          <button onclick="selectNode('f-org3')" class="px-2 py-1 rounded-md text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-400 border border-slate-700">Org 3 Aislada</button>
+        </div>
+
+        <div id="inspector-db-box" class="mono text-[11px] leading-relaxed bg-[#070b14] border border-slate-800/90 rounded-xl p-3 text-slate-200 overflow-x-auto max-h-[165px]"></div>
+      </div>
+
+      <!-- BLOQUE C: CONSOLA DE LOGS PASO A PASO -->
+      <div class="flex-1 bg-[#0f172a] border border-slate-800 rounded-2xl p-3.5 shadow-md flex flex-col min-h-[175px]">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-purple-400"></span>
+            C. Consola de Ejecución en Vivo
+          </h2>
+          <button onclick="clearLogs()" class="text-[11px] text-slate-400 hover:text-white transition">Limpiar</button>
+        </div>
+        <div id="inspector-logs" class="mono text-[11px] leading-relaxed bg-[#070b14] border border-slate-800/90 rounded-xl p-3 flex-1 overflow-y-auto space-y-1.5 max-h-[205px]"></div>
+      </div>
+
+    </aside>
+  </main>
+
+  <!-- ==================== MODAL COMPARATIVO (0x vs X.509) ==================== -->
+  <div id="compare-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm items-center justify-center p-4" onclick="if(event.target===this) toggleCompareModal(false)">
+    <div class="bg-[#0f172a] border border-slate-700 rounded-2xl max-w-3xl w-full p-5 shadow-2xl">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div>
+          <h3 class="text-base font-bold text-white">Contraste Técnico: Identidad y Privacidad</h3>
+          <p class="text-xs text-slate-400">Apoyo visual rápido para preguntas del jurado</p>
+        </div>
+        <button onclick="toggleCompareModal(false)" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300">Cerrar (Esc)</button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 text-xs">
+        <div class="bg-[#070b14] border border-sky-500/30 rounded-xl p-3.5">
+          <div class="text-sky-400 font-bold mb-1.5">Quorum (Enterprise Ethereum)</div>
+          <ul class="space-y-1.5 text-slate-300">
+            <li><strong class="text-white">Dirección:</strong> Hexadecimal de 20 bytes (<code class="text-sky-300">0x71C9...989A</code>).</li>
+            <li><strong class="text-white">Acceso de Red:</strong> Lista blanca de nodos (<code class="text-sky-300">permissioned-nodes.json</code>).</li>
+            <li><strong class="text-white">Privacidad:</strong> Un único libro público con hashes + estado privado local cifrado punto a punto por <strong>Tessera</strong>.</li>
+            <li><strong class="text-white">Ejecución:</strong> <em>Order → Execute</em> (todos los nodos ejecutan contratos Solidity).</li>
+          </ul>
+        </div>
+
+        <div class="bg-[#070b14] border border-emerald-500/30 rounded-xl p-3.5">
+          <div class="text-emerald-400 font-bold mb-1.5">Hyperledger Fabric (Linux Foundation)</div>
+          <ul class="space-y-1.5 text-slate-300">
+            <li><strong class="text-white">Dirección:</strong> NO usa <code class="text-rose-300">0x...</code>; usa <strong>Certificados X.509</strong> + <code class="text-emerald-300">Org1MSP</code>.</li>
+            <li><strong class="text-white">Acceso de Red:</strong> Autoridad Certificadora (CA) y MSP verifican cada firma.</li>
+            <li><strong class="text-white">Privacidad:</strong> <strong>Canales</strong> físicamente aislados (sub-blockchains independientes).</li>
+            <li><strong class="text-white">Ejecución:</strong> <em>Execute → Order → Validate</em> (paralelo en contenedores Docker).</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== LÓGICA DE SIMULACIÓN E INSPECCIÓN ==================== -->
+  <script>
+    const state = {
+      platform: 'quorum',       // 'quorum' | 'fabric'
+      stepMode: false,          // false (Auto) | true (Paso a Paso)
+      stepResolver: null,       // Promesa pendiente cuando espera clic en "Continuar"
+      speedMultiplier: 1,       // 1 (Normal) | 2 (Narración 0.5x)
+      isAnimating: false,
+      selectedNode: 'q-bankA',
+      timers: [],
+      rafIds: [],
+
+      quorum: {
+        consensus: 'QBFT',
+        blockNumber: 10,
+        lastHash: '0x4a7e91c0b2...881f',
+        privateTxs: [
+          { id: 'tx-init', from: 'Banco A', to: 'Banco B', amount: 50000, concept: 'Apertura Línea Crédito' }
+        ],
+        balances: {
+          bankA: 200000,
+          bankB: 80000,
+        },
+        lastPayloadView: null,
+      },
+
+      fabric: {
+        identityMode: 'valid',  // 'valid' | 'revoked'
+        blockNumber: 4,
+        asset: {
+          id: 'ACT-01',
+          owner: 'Org1MSP (Banco A)',
+          value: 50000,
+          version: 1,
+        },
+        history: [
+          { block: 4, txId: 'tx_98a1c', status: 'VALID', detail: 'InitLedger(ACT-01, $50,000, v1)' }
+        ],
+        lastRwSetView: null,
+      }
+    };
+
+    // ==================== UTILIDADES DE TIEMPO Y ANIMACIÓN ====================
+
+    function getDuration(baseMs) {
+      return baseMs * state.speedMultiplier;
+    }
+
+    function waitStepIfNeeded(nextStepLabel) {
+      if (!state.stepMode) return Promise.resolve();
+      const btn = document.getElementById('btn-next-step');
+      btn.querySelector('span').textContent = nextStepLabel;
+      btn.classList.remove('hidden');
+      btn.classList.add('inline-flex');
+      return new Promise(resolve => {
+        state.stepResolver = () => {
+          btn.classList.add('hidden');
+          btn.classList.remove('inline-flex');
+          state.stepResolver = null;
+          resolve();
+        };
+      });
+    }
+
+    function resumeNextStep() {
+      if (state.stepResolver) {
+        state.stepResolver();
+      }
+    }
+
+    function clearAllAnimations() {
+      state.timers.forEach(clearTimeout);
+      state.timers = [];
+      state.rafIds.forEach(cancelAnimationFrame);
+      state.rafIds = [];
+      state.isAnimating = false;
+      state.stepResolver = null;
+
+      const nextBtn = document.getElementById('btn-next-step');
+      if (nextBtn) {
+        nextBtn.classList.add('hidden');
+        nextBtn.classList.remove('inline-flex');
+      }
+
+      const packets = [
+        'q-pkt-private', 'q-pkt-hash-ab', 'q-pkt-hash-ac', 'q-pkt-intruder',
+        'f-pkt-msp', 'f-pkt-exec1', 'f-pkt-exec2', 'f-pkt-order', 'f-pkt-val'
+      ];
+      packets.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.setAttribute('opacity', '0');
+      });
+
+      document.querySelectorAll('.flow-line-active').forEach(el => el.classList.remove('flow-line-active'));
+    }
+
+    function animateSvgPacket(elementId, x1, y1, x2, y2, baseDurationMs, keepVisibleAtEnd = false) {
+      return new Promise(resolve => {
+        const el = document.getElementById(elementId);
+        if (!el) return resolve();
+
+        const duration = getDuration(baseDurationMs);
+        const startTime = performance.now();
+        el.setAttribute('opacity', '1');
+        el.setAttribute('transform', `translate(${x1}, ${y1})`);
+
+        function step(now) {
+          const elapsed = now - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          const ease = progress < 0.5
+            ? 4 * progress * progress * progress
+            : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
+          const curX = x1 + (x2 - x1) * ease;
+          const curY = y1 + (y2 - y1) * ease;
+          el.setAttribute('transform', `translate(${curX.toFixed(1)}, ${curY.toFixed(1)})`);
+
+          if (progress < 1) {
+            const rafId = requestAnimationFrame(step);
+            state.rafIds.push(rafId);
+          } else {
+            if (!keepVisibleAtEnd) {
+              el.setAttribute('opacity', '0');
+            }
+            resolve();
+          }
+        }
+
+        const rafId = requestAnimationFrame(step);
+        state.rafIds.push(rafId);
+      });
+    }
+
+    function setPhaseBanner(text, colorType = 'sky') {
+      const dot = document.getElementById('phase-indicator-dot');
+      const label = document.getElementById('phase-status-text');
+      const colors = {
+        sky: ['bg-sky-400', 'text-sky-300'],
+        amber: ['bg-amber-400', 'text-amber-300'],
+        emerald: ['bg-emerald-400', 'text-emerald-300'],
+        purple: ['bg-purple-400', 'text-purple-300'],
+        rose: ['bg-rose-500', 'text-rose-300'],
+      };
+      const [dotClass, textClass] = colors[colorType] || colors.sky;
+      dot.className = `w-2.5 h-2.5 rounded-full shrink-0 ${dotClass}`;
+      label.className = `${textClass} font-medium`;
+      label.textContent = text;
+    }
+
+    function appendLog(tag, message, type = 'info') {
+      const container = document.getElementById('inspector-logs');
+      const now = new Date();
+      const time = now.toTimeString().split(' ')[0];
+
+      const badgeStyles = {
+        info: 'bg-sky-500/15 text-sky-300 border-sky-500/30',
+        crypto: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+        consensus: 'bg-purple-500/15 text-purple-300 border-purple-500/30',
+        valid: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+        error: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
+      };
+
+      const entry = document.createElement('div');
+      entry.className = 'flex items-start gap-2 border-b border-slate-800/60 pb-1.5';
+      entry.innerHTML = `
+        <span class="text-slate-500 shrink-0">${time}</span>
+        <span class="px-1.5 py-0.2 rounded text-[10px] font-bold border shrink-0 ${badgeStyles[type] || badgeStyles.info}">${tag}</span>
+        <span class="text-slate-200 break-words">${message}</span>
+      `;
+      container.appendChild(entry);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function clearLogs() {
+      document.getElementById('inspector-logs').innerHTML = '';
+    }
+
+    // ==================== CONTROLES DE NAVEGACIÓN Y CONFIGURACIÓN ====================
+
+    function switchPlatform(platform) {
+      clearAllAnimations();
+      state.platform = platform;
+      const isQuorum = platform === 'quorum';
+
+      document.getElementById('tab-quorum').className = isQuorum
+        ? 'px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 bg-sky-500 text-slate-950 shadow-sm'
+        : 'px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 text-slate-300 hover:text-white';
+
+      document.getElementById('tab-fabric').className = !isQuorum
+        ? 'px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 bg-emerald-500 text-slate-950 shadow-sm'
+        : 'px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 text-slate-300 hover:text-white';
+
+      document.getElementById('controls-quorum').classList.toggle('hidden', !isQuorum);
+      document.getElementById('controls-quorum').classList.toggle('flex', isQuorum);
+      document.getElementById('controls-fabric').classList.toggle('hidden', isQuorum);
+      document.getElementById('controls-fabric').classList.toggle('flex', !isQuorum);
+
+      document.getElementById('svg-quorum').classList.toggle('hidden', !isQuorum);
+      document.getElementById('svg-fabric').classList.toggle('hidden', isQuorum);
+
+      document.getElementById('legend-quorum').classList.toggle('hidden', !isQuorum);
+      document.getElementById('legend-quorum').classList.toggle('flex', isQuorum);
+      document.getElementById('legend-fabric').classList.toggle('hidden', isQuorum);
+      document.getElementById('legend-fabric').classList.toggle('flex', !isQuorum);
+
+      document.getElementById('quick-nodes-quorum').classList.toggle('hidden', !isQuorum);
+      document.getElementById('quick-nodes-quorum').classList.toggle('flex', isQuorum);
+      document.getElementById('quick-nodes-fabric').classList.toggle('hidden', isQuorum);
+      document.getElementById('quick-nodes-fabric').classList.toggle('flex', !isQuorum);
+
+      selectNode(isQuorum ? 'q-bankA' : 'f-ep1');
+      renderCryptoInspector();
+      setPhaseBanner(
+        isQuorum
+          ? 'Quorum activo. Simula una transacción privada con Tessera o una intrusión.'
+          : 'Hyperledger Fabric activo. Prueba el flujo Execute → Order → Validate.',
+        isQuorum ? 'sky' : 'emerald'
+      );
+      appendLog(
+        isQuorum ? 'QUORUM' : 'FABRIC',
+        isQuorum
+          ? 'Entorno Quorum (Geth + Tessera) cargado.'
+          : 'Entorno Hyperledger Fabric (X.509 + Canal aislado) cargado.',
+        'info'
+      );
+    }
+
+    function setStepMode(enabled) {
+      state.stepMode = enabled;
+      document.getElementById('mode-auto').className = !enabled
+        ? 'px-2.5 py-1.5 rounded-lg font-semibold bg-slate-700 text-white transition'
+        : 'px-2.5 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-white transition';
+      document.getElementById('mode-step').className = enabled
+        ? 'px-2.5 py-1.5 rounded-lg font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40 transition'
+        : 'px-2.5 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-white transition';
+
+      if (!enabled && state.stepResolver) {
+        resumeNextStep();
+      }
+      appendLog('MODO', enabled ? 'Modo Paso a Paso activado (pausará entre fases).' : 'Modo Automático activado.', 'info');
+    }
+
+    function setSpeed(mult) {
+      state.speedMultiplier = mult === 1 ? 1 : 2;
+      document.getElementById('speed-1x').className = mult === 1
+        ? 'px-2.5 py-1.5 rounded-lg font-semibold bg-slate-700 text-white transition'
+        : 'px-2.5 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-white transition';
+      document.getElementById('speed-05x').className = mult === 0.5
+        ? 'px-2.5 py-1.5 rounded-lg font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40 transition'
+        : 'px-2.5 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-white transition';
+    }
+
+    function toggleCompareModal(show) {
+      const modal = document.getElementById('compare-modal');
+      modal.classList.toggle('hidden', !show);
+      modal.classList.toggle('flex', show);
+    }
+
+    function handlePrimaryAction() {
+      if (state.stepResolver) {
+        resumeNextStep();
+        return;
+      }
+      if (state.platform === 'quorum') {
+        runQuorumPrivateTx();
+      } else {
+        runFabricFlow(false);
+      }
+    }
+
+    function onQuorumConsensusChange() {
+      const val = document.getElementById('quorum-consensus').value;
+      state.quorum.consensus = val;
+
+      const titleEl = document.getElementById('q-consensus-title');
+      const subEl = document.getElementById('q-consensus-sub');
+      const roleA = document.getElementById('q-bankA-role-tag');
+      const roleB = document.getElementById('q-bankB-role-tag');
+      const roleC = document.getElementById('q-bankC-role-tag');
+
+      if (val === 'RAFT') {
+        titleEl.textContent = 'CONSENSO: RAFT (CFT · ~50ms)';
+        titleEl.setAttribute('fill', '#fbbf24');
+        subEl.textContent = 'Líder ordena y replica a Seguidores';
+        roleA.textContent = '★ LÍDER RAFT';
+        roleA.setAttribute('fill', '#fbbf24');
+        roleB.textContent = 'Seguidor';
+        roleC.textContent = 'Seguidor';
+      } else {
+        titleEl.textContent = 'CONSENSO: QBFT (BFT · 2/3)';
+        titleEl.setAttribute('fill', '#38bdf8');
+        subEl.textContent = 'Pre-prepare → Prepare → Commit';
+        roleA.textContent = 'Validador';
+        roleA.setAttribute('fill', '#38bdf8');
+        roleB.textContent = 'Validador';
+        roleC.textContent = 'Validador';
+      }
+
+      appendLog('CONSENSO', `Algoritmo actualizado a ${val}.`, 'consensus');
+      renderCryptoInspector();
+    }
+
+    function onFabricIdentityChange() {
+      state.fabric.identityMode = document.getElementById('fabric-identity').value;
+      const badge = document.getElementById('f-client-id-badge');
+      const mspTxt = document.getElementById('f-msp-status-txt');
+
+      if (state.fabric.identityMode === 'valid') {
+        badge.textContent = 'User1@Org1 (X.509)';
+        badge.setAttribute('fill', '#6ee7b7');
+        mspTxt.textContent = 'Valida firmas y membresía';
+        mspTxt.setAttribute('fill', '#94a3b8');
+        appendLog('MSP', 'Identidad seleccionada: User1@Org1 (Certificado X.509 válido).', 'valid');
+      } else {
+        badge.textContent = 'Intruder@Org3 (Revocado)';
+        badge.setAttribute('fill', '#fda4af');
+        mspTxt.textContent = 'Alerta: Org3 fuera de canal';
+        mspTxt.setAttribute('fill', '#fda4af');
+        appendLog('MSP', 'Identidad seleccionada: Intruder@Org3 (Certificado revocado/no autorizado).', 'error');
+      }
+      renderCryptoInspector();
+    }
+
+    function resetSimulation() {
+      clearAllAnimations();
+      state.quorum.blockNumber = 10;
+      state.quorum.lastHash = '0x4a7e91c0b2...881f';
+      state.quorum.balances = { bankA: 200000, bankB: 80000 };
+      state.quorum.privateTxs = [
+        { id: 'tx-init', from: 'Banco A', to: 'Banco B', amount: 50000, concept: 'Apertura Línea Crédito' }
+      ];
+      state.quorum.lastPayloadView = null;
+      document.getElementById('q-consensus-round').textContent = 'Estado: Esperando propuesta de bloque';
+
+      state.fabric.blockNumber = 4;
+      state.fabric.asset = { id: 'ACT-01', owner: 'Org1MSP (Banco A)', value: 50000, version: 1 };
+      state.fabric.history = [
+        { block: 4, txId: 'tx_98a1c', status: 'VALID', detail: 'InitLedger(ACT-01, $50,000, v1)' }
+      ];
+      state.fabric.lastRwSetView = null;
+
+      updateSvgLabels();
+      clearLogs();
+      selectNode(state.platform === 'quorum' ? 'q-bankA' : 'f-ep1');
+      renderCryptoInspector();
+      setPhaseBanner('Estado reiniciado a valores iniciales.', 'sky');
+      appendLog('RESET', 'Bases de datos, bloques y contadores restaurados.', 'info');
+    }
+
+    function updateSvgLabels(lastBlockTag = null) {
+      document.getElementById('q-bankA-pub-label').textContent = `Bloque #${state.quorum.blockNumber}`;
+      document.getElementById('q-bankB-pub-label').textContent = `Bloque #${state.quorum.blockNumber}`;
+      document.getElementById('q-bankC-pub-label').textContent = `Bloque #${state.quorum.blockNumber}`;
+      document.getElementById('q-bankA-priv-label').textContent = `$${state.quorum.balances.bankA.toLocaleString()}`;
+      document.getElementById('q-bankB-priv-label').textContent = `$${state.quorum.balances.bankB.toLocaleString()}`;
+
+      document.getElementById('f-orderer-block-label').textContent = `Último Bloque Empaquetado: #${state.fabric.blockNumber}`;
+      document.getElementById('f-ws-asset').textContent = `Activo: ${state.fabric.asset.id} | ${state.fabric.asset.owner.split(' ')[0]}`;
+      document.getElementById('f-ws-val').textContent = `Valor: $${state.fabric.asset.value.toLocaleString()} | Ver: v${state.fabric.asset.version}`;
+
+      if (!lastBlockTag) {
+        document.getElementById('f-mvcc-status').textContent = `2. Check MVCC: Versión v${state.fabric.asset.version} OK`;
+        document.getElementById('f-mvcc-status').setAttribute('fill', '#34d399');
+      }
+
+      const blocksList = [];
+      for (let i = Math.max(0, state.fabric.blockNumber - 4); i <= state.fabric.blockNumber; i++) {
+        if (i === state.fabric.blockNumber && lastBlockTag) {
+          blocksList.push(`#${i}(${lastBlockTag})`);
+        } else {
+          blocksList.push(`#${i}`);
+        }
+      }
+      document.getElementById('f-bc-blocks').textContent = `Bloques: ${blocksList.join(' → ')}`;
+    }
+
+    // ==================== SELECCIÓN DE NODOS E INSPECTOR ====================
+
+    function selectNode(nodeId) {
+      state.selectedNode = nodeId;
+
+      const allRings = [
+        'ring-q-bankA', 'ring-q-bankB', 'ring-q-bankC', 'ring-q-intruder',
+        'ring-f-client', 'ring-f-msp', 'ring-f-ep1', 'ring-f-ep2', 'ring-f-orderer', 'ring-f-committer', 'ring-f-org3'
+      ];
+      allRings.forEach(rId => {
+        const el = document.getElementById(rId);
+        if (el) el.setAttribute('opacity', '0');
+      });
+
+      const activeRing = document.getElementById(`ring-${nodeId}`);
+      if (activeRing) activeRing.setAttribute('opacity', '1');
+
+      renderDatabaseInspector();
+    }
+
+    function renderCryptoInspector() {
+      const idTypeBadge = document.getElementById('inspector-id-type');
+      const box = document.getElementById('inspector-crypto-box');
+
+      if (state.platform === 'quorum') {
+        idTypeBadge.textContent = 'Dirección 0x... (EVM)';
+        idTypeBadge.className = 'text-[10px] font-semibold px-2 py-0.5 rounded-md bg-sky-500/15 text-sky-300 border border-sky-500/30';
+
+        if (state.quorum.lastPayloadView) {
+          box.textContent = JSON.stringify(state.quorum.lastPayloadView, null, 2);
+        } else {
+          box.textContent = JSON.stringify({
+            modeloIdentidad: "Cuenta Ethereum (Hex 20 bytes)",
+            from: "0x71C95911E9a5D330f4D621842EC243013432989A",
+            gasPrice: "0 (Red Empresarial Sin Costo)",
+            consensoActivo: state.quorum.consensus,
+            privateFor: ["QfeDAys9MPDs2XHExtc84jKGHxZg/aj52DTh0vtA3Xc="]
+          }, null, 2);
+        }
+      } else {
+        idTypeBadge.textContent = 'Certificado X.509 (Sin 0x)';
+        idTypeBadge.className = 'text-[10px] font-semibold px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/30';
+
+        const isValid = state.fabric.identityMode === 'valid';
+        const certObj = isValid
+          ? {
+              modeloIdentidad: "Certificado Digital X.509 (NO usa 0x...)",
+              MSPID: "Org1MSP",
+              Subject: "CN=User1, OU=client, O=Org1, C=US",
+              Issuer: "CN=ca.org1.example.com",
+              EstadoCertificado: "VÁLIDO (Firmado por CA autorizada)",
+              ...(state.fabric.lastRwSetView ? { ultimoRWSet: state.fabric.lastRwSetView } : {})
+            }
+          : {
+              modeloIdentidad: "Certificado Digital X.509 (NO usa 0x...)",
+              MSPID: "Org3MSP (No miembro del canal)",
+              Subject: "CN=Intruder, OU=client, O=Org3",
+              EstadoCertificado: "REVOCADO / NO AUTORIZADO EN MSP"
+            };
+        box.textContent = JSON.stringify(certObj, null, 2);
+      }
+    }
+
+    function renderDatabaseInspector() {
+      const nodeTitle = document.getElementById('inspector-selected-node');
+      const dbBox = document.getElementById('inspector-db-box');
+      const n = state.selectedNode;
+
+      if (n === 'q-bankA') {
+        nodeTitle.textContent = 'Banco A (Geth + Tessera)';
+        dbBox.innerHTML = `
+          <div class="text-sky-300 font-bold mb-1">▸ Estado Público (Compartido en Red):</div>
+          <div class="text-slate-300 mb-2 pl-2 border-l-2 border-sky-500/50">
+            Bloque Actual: #${state.quorum.blockNumber}<br/>
+            Último Hash Privado: <span class="text-amber-300">${state.quorum.lastHash}</span>
+          </div>
+          <div class="text-amber-300 font-bold mb-1">▸ Estado Privado (Solo Banco A y B):</div>
+          <div class="text-slate-200 pl-2 border-l-2 border-amber-500/60">
+            Saldo Confidencial: <span class="text-emerald-400 font-bold">$${state.quorum.balances.bankA.toLocaleString()} USD</span><br/>
+            Contratos Privados: ${state.quorum.privateTxs.length} registros descifrados
+          </div>
+        `;
+      } else if (n === 'q-bankB') {
+        nodeTitle.textContent = 'Banco B (Geth + Tessera)';
+        dbBox.innerHTML = `
+          <div class="text-sky-300 font-bold mb-1">▸ Estado Público (Compartido en Red):</div>
+          <div class="text-slate-300 mb-2 pl-2 border-l-2 border-sky-500/50">
+            Bloque Actual: #${state.quorum.blockNumber}<br/>
+            Último Hash Privado: <span class="text-amber-300">${state.quorum.lastHash}</span>
+          </div>
+          <div class="text-amber-300 font-bold mb-1">▸ Estado Privado (Descifrado por Tessera B):</div>
+          <div class="text-slate-200 pl-2 border-l-2 border-amber-500/60">
+            Saldo Confidencial: <span class="text-emerald-400 font-bold">$${state.quorum.balances.bankB.toLocaleString()} USD</span><br/>
+            Última Recepción: $${state.quorum.privateTxs[state.quorum.privateTxs.length - 1].amount.toLocaleString()} USD
+          </div>
+        `;
+      } else if (n === 'q-bankC') {
+        nodeTitle.textContent = 'Banco C (Observador sin llave)';
+        dbBox.innerHTML = `
+          <div class="text-sky-300 font-bold mb-1">▸ Estado Público (Ve la existencia del Hash):</div>
+          <div class="text-slate-300 mb-2 pl-2 border-l-2 border-sky-500/50">
+            Bloque Actual: #${state.quorum.blockNumber}<br/>
+            Hash Registrado: <span class="text-slate-400">${state.quorum.lastHash}</span>
+          </div>
+          <div class="text-rose-300 font-bold mb-1">▸ Estado Privado Local:</div>
+          <div class="text-slate-400 pl-2 border-l-2 border-rose-500/50">
+            [VACÍO / SIN LLAVE DE DESCIFRADO]<br/>
+            Banco C sabe que ocurrió una operación, pero no conoce montos ni contrapartes.
+          </div>
+        `;
+      } else if (n === 'q-intruder') {
+        nodeTitle.textContent = 'Nodo Externo (No Autorizado)';
+        dbBox.innerHTML = `
+          <div class="text-rose-400 font-bold mb-1">▸ Estado de Conexión P2P:</div>
+          <div class="text-slate-300 pl-2 border-l-2 border-rose-500">
+            ID: enode://99a4f18e...0012<br/>
+            Estado: <span class="text-rose-400 font-bold">RECHAZADO POR WHITELIST</span><br/>
+            No puede descargar bloques ni enviar transacciones.
+          </div>
+        `;
+      } else if (n === 'f-ep1' || n === 'f-ep2') {
+        const org = n === 'f-ep1' ? 'Org 1 (Banco A)' : 'Org 2 (Banco B)';
+        nodeTitle.textContent = `Endorsing Peer · ${org}`;
+        dbBox.innerHTML = `
+          <div class="text-emerald-300 font-bold mb-1">▸ Contenedor Chaincode (Docker):</div>
+          <div class="text-slate-300 mb-2 pl-2 border-l-2 border-emerald-500/60">
+            Contrato: <span class="text-white">transferencia_activos_cc (Go v1.2)</span><br/>
+            Política de Aval: AND('Org1MSP.peer', 'Org2MSP.peer')
+          </div>
+          <div class="text-sky-300 font-bold mb-1">▸ World State Actual (CouchDB):</div>
+          <div class="text-slate-200 pl-2 border-l-2 border-sky-500/50">
+            Key: "${state.fabric.asset.id}" | Version: <span class="text-amber-300">v${state.fabric.asset.version}</span><br/>
+            Owner: ${state.fabric.asset.owner} | Valor: $${state.fabric.asset.value.toLocaleString()}
+          </div>
+        `;
+      } else if (n === 'f-orderer') {
+        nodeTitle.textContent = 'Ordering Service (Clúster Raft)';
+        dbBox.innerHTML = `
+          <div class="text-purple-300 font-bold mb-1">▸ Motor de Consenso (Sin EVM / Sin Chaincode):</div>
+          <div class="text-slate-300 pl-2 border-l-2 border-purple-500/60">
+            Algoritmo: Raft (Líder activo: orderer0.example.com)<br/>
+            Último Bloque Creado: <span class="text-white font-bold">#${state.fabric.blockNumber}</span><br/>
+            Función: Ordenar transacciones ya avaladas por tiempo de llegada sin leer lógica de negocio.
+          </div>
+        `;
+      } else if (n === 'f-committer') {
+        nodeTitle.textContent = 'Committer Peers · Canal Privado';
+        const lastHist = state.fabric.history[state.fabric.history.length - 1];
+        dbBox.innerHTML = `
+          <div class="text-emerald-300 font-bold mb-1">▸ World State (CouchDB):</div>
+          <div class="text-slate-200 mb-2 pl-2 border-l-2 border-emerald-500/60">
+            ${state.fabric.asset.id}: $${state.fabric.asset.value.toLocaleString()} (Versión <span class="text-amber-300">v${state.fabric.asset.version}</span>)
+          </div>
+          <div class="text-sky-300 font-bold mb-1">▸ Último Registro en Blockchain (#${lastHist.block}):</div>
+          <div class="text-slate-300 pl-2 border-l-2 border-sky-500/50">
+            Tx: ${lastHist.txId} [<span class="${lastHist.status === 'VALID' ? 'text-emerald-400' : 'text-rose-400'} font-bold">${lastHist.status}</span>]<br/>
+            ${lastHist.detail}
+          </div>
+        `;
+      } else if (n === 'f-org3') {
+        nodeTitle.textContent = 'Org 3 · Canal Aislado ("canal-logistica")';
+        dbBox.innerHTML = `
+          <div class="text-slate-300 font-bold mb-1">▸ Aislamiento Físico de Ledger:</div>
+          <div class="text-slate-400 pl-2 border-l-2 border-slate-500">
+            Canales suscritos: ["canal-logistica"]<br/>
+            Acceso a "canal-bancos": <span class="text-rose-400 font-bold">NINGUNO</span><br/>
+            Org 3 no almacena ni hashes ni bloques de las transacciones entre Org 1 y Org 2.
+          </div>
+        `;
+      } else if (n === 'f-msp' || n === 'f-client') {
+        nodeTitle.textContent = n === 'f-msp' ? 'CA & MSP (Identidad PKI)' : 'Aplicación Cliente SDK';
+        dbBox.innerHTML = `
+          <div class="text-sky-300 font-bold mb-1">▸ Registro de Certificados X.509:</div>
+          <div class="text-slate-300 pl-2 border-l-2 border-sky-500/60">
+            Organizaciones en Canal: Org1MSP, Org2MSP<br/>
+            Org3MSP: <span class="text-rose-400 font-bold">NO AUTORIZADA / REVOCADA</span><br/>
+            En Fabric las transacciones se firman con certificados X.509, no con direcciones 0x...
+          </div>
+        `;
+      }
+    }
+
+    // ==================== SIMULACIÓN 1: QUORUM ====================
+
+    async function runQuorumPrivateTx() {
+      if (state.isAnimating) return;
+
+      const amount = parseInt(document.getElementById('quorum-amount').value, 10);
+      if (state.quorum.balances.bankA < amount) {
+        setPhaseBanner('Saldo privado insuficiente en Banco A. Presiona "Reiniciar" para restaurar fondos.', 'rose');
+        appendLog('REVERT', `Contrato privado revertido: saldo ($${state.quorum.balances.bankA.toLocaleString()}) < $${amount.toLocaleString()}.`, 'error');
+        return;
+      }
+
+      state.isAnimating = true;
+      const consensus = state.quorum.consensus;
+      const newHash = '0x' + Math.random().toString(16).substring(2, 10) + '...' + Math.random().toString(16).substring(2, 6);
+
+      // PASO 1: Cifrado en Tessera A y envío punto a punto a Tessera B
+      selectNode('q-bankA');
+      setPhaseBanner(`Paso 1/3: Tessera A cifra $${amount.toLocaleString()} USD y los envía directo a Tessera B (HTTPS P2P)...`, 'amber');
+      document.getElementById('q-line-tessera').classList.add('flow-line-active');
+
+      state.quorum.lastPayloadView = {
+        tipo: "Transacción Privada Quorum",
+        from: "Banco A (0x71C9...989A)",
+        privateFor: ["Banco B (QfeDAys9...)"],
+        payloadOriginal: { monto: `$${amount.toLocaleString()} USD`, activo: "USDC-Institucional" },
+        payloadCifradoEnRed: "AES256_GCM::9b7f2c11a84e09d3...",
+        hashPublicoGenerado: newHash
+      };
+      renderCryptoInspector();
+      appendLog('TESSERA', `Payload de $${amount.toLocaleString()} cifrado y enviado P2P solo a Banco B.`, 'crypto');
+
+      await animateSvgPacket('q-pkt-private', 210, 158, 455, 158, 1150, false);
+      document.getElementById('q-line-tessera').classList.remove('flow-line-active');
+
+      await waitStepIfNeeded('Paso 2: Propagar Hash por Consenso →');
+
+      // PASO 2: Propagación del Hash Público por consenso (QBFT o Raft)
+      const roundLabel = document.getElementById('q-consensus-round');
+      if (consensus === 'QBFT') {
+        setPhaseBanner('Paso 2/3: Consenso QBFT (Pre-prepare → Prepare → Commit 2/3) propaga solo el Hash...', 'sky');
+        roundLabel.textContent = 'Ronda 1/3: Pre-prepare → Prepare → Commit (2/3 OK)';
+        roundLabel.setAttribute('fill', '#38bdf8');
+      } else {
+        setPhaseBanner('Paso 2/3: Líder Raft ordena el bloque en 50ms propagando solo el Hash a seguidores...', 'sky');
+        roundLabel.textContent = 'Líder Banco A → Replicación Raft 50ms (ACK 2/2)';
+        roundLabel.setAttribute('fill', '#fbbf24');
+      }
+
+      document.getElementById('q-line-p2p-ab').classList.add('flow-line-active');
+      document.getElementById('q-line-p2p-ac').classList.add('flow-line-active');
+      document.getElementById('q-line-p2p-bc').classList.add('flow-line-active');
+
+      appendLog('CONSENSO', `${consensus}: Propagando hash ${newHash} a todos los nodos (A, B y C).`, 'consensus');
+
+      await Promise.all([
+        animateSvgPacket('q-pkt-hash-ab', 255, 95, 415, 95, 1050, false),
+        animateSvgPacket('q-pkt-hash-ac', 165, 205, 265, 320, 1050, false),
+      ]);
+
+      document.getElementById('q-line-p2p-ab').classList.remove('flow-line-active');
+      document.getElementById('q-line-p2p-ac').classList.remove('flow-line-active');
+      document.getElementById('q-line-p2p-bc').classList.remove('flow-line-active');
+
+      await waitStepIfNeeded('Paso 3: Actualizar Estados Privados →');
+
+      // PASO 3: Actualización de Estados (A y B descifran; C ignora)
+      state.quorum.blockNumber += 1;
+      state.quorum.lastHash = newHash;
+      state.quorum.balances.bankA -= amount;
+      state.quorum.balances.bankB += amount;
+      state.quorum.privateTxs.push({
+        id: `tx-${state.quorum.blockNumber}`,
+        from: 'Banco A',
+        to: 'Banco B',
+        amount,
+        concept: 'Transferencia Privada'
+      });
+
+      roundLabel.textContent = `Bloque #${state.quorum.blockNumber} sellado con finalidad inmediata`;
+      updateSvgLabels();
+      selectNode('q-bankC'); // Seleccionamos Banco C automáticamente para evidenciar que no ve el saldo
+
+      setPhaseBanner('Paso 3/3: Banco A y B actualizaron su Estado Privado. Banco C solo registró el Hash.', 'emerald');
+      appendLog('ESTADO', `Bloque #${state.quorum.blockNumber} confirmado. A y B descifraron datos; C sin acceso.`, 'valid');
+
+      state.isAnimating = false;
+    }
+
+    async function runQuorumIntrusion() {
+      if (state.isAnimating) return;
+      state.isAnimating = true;
+
+      selectNode('q-intruder');
+      setPhaseBanner('Intento de conexión externa: Verificando enode en permissioned-nodes.json...', 'rose');
+      document.getElementById('q-line-intruder').classList.add('flow-line-active');
+      appendLog('SEGURIDAD', 'Conexión entrante desde enode://99a4f1... verificando Whitelist.', 'info');
+
+      await animateSvgPacket('q-pkt-intruder', 710, 265, 658, 265, 950, false);
+      document.getElementById('q-line-intruder').classList.remove('flow-line-active');
+
+      setPhaseBanner('BLOQUEADO: El enode externo no figura en la Whitelist permisionada de Quorum.', 'rose');
+      appendLog('RECHAZADO', 'Handshake P2P cerrado: nodo no autorizado en permissioned-nodes.json.', 'error');
+
+      state.isAnimating = false;
+    }
+
+    // ==================== SIMULACIÓN 2: HYPERLEDGER FABRIC ====================
+
+    async function runFabricFlow(simulateMvccConflict = false) {
+      if (state.isAnimating) return;
+      state.isAnimating = true;
+
+      const isValidIdentity = state.fabric.identityMode === 'valid';
+
+      // PASO 0: Validación de Certificado X.509 en MSP
+      selectNode('f-msp');
+      setPhaseBanner('Fase 0: Verificando Certificado Digital X.509 y membresía en MSP...', 'sky');
+      await animateSvgPacket('f-pkt-msp', 115, 185, 115, 285, 800, false);
+
+      if (!isValidIdentity) {
+        setPhaseBanner('RECHAZADO POR MSP: Certificado X.509 de Intruder@Org3 revocado / no pertenece al canal.', 'rose');
+        appendLog('MSP-ERROR', 'Acceso denegado: Org3MSP no tiene permisos en "canal-bancos".', 'error');
+        state.isAnimating = false;
+        return;
+      }
+
+      appendLog('MSP-OK', 'Certificado X.509 de User1@Org1 validado correctamente.', 'valid');
+      await waitStepIfNeeded('Fase 1: Ejecutar en Endorsing Peers →');
+
+      // FASE 1: EXECUTE (Simulación paralela en Endorsing Peers)
+      selectNode('f-ep1');
+      setPhaseBanner('Fase 1 (EXECUTE): Endorsing Peers Org1 y Org2 simulan Chaincode en paralelo...', 'emerald');
+      document.getElementById('f-line-exec1').classList.add('flow-line-active');
+      document.getElementById('f-line-exec2').classList.add('flow-line-active');
+      document.getElementById('f-pkt-exec1-txt').textContent = 'Propuesta';
+      document.getElementById('f-pkt-exec2-txt').textContent = 'Propuesta';
+
+      await Promise.all([
+        animateSvgPacket('f-pkt-exec1', 205, 102, 265, 102, 850, false),
+        animateSvgPacket('f-pkt-exec2', 205, 132, 265, 232, 850, false),
+      ]);
+
+      const currentVer = state.fabric.asset.version;
+      const nextVer = currentVer + 1;
+      const newValue = state.fabric.asset.value + 10000;
+
+      state.fabric.lastRwSetView = {
+        fase: "1. EXECUTE (Simulación sin escribir en Ledger)",
+        readSet: { key: "ACT-01", versionLeida: `v${currentVer}` },
+        writeSet: { key: "ACT-01", nuevoValor: `$${newValue.toLocaleString()}`, nuevaVersion: `v${nextVer}` },
+        avalesFirmados: ["Firma_Endorser_Org1", "Firma_Endorser_Org2"]
+      };
+      renderCryptoInspector();
+      appendLog('EXECUTE', `Avales obtenidos de Org1 y Org2. RW-Set generado (v${currentVer} → v${nextVer}).`, 'valid');
+
+      document.getElementById('f-pkt-exec1-txt').textContent = '✓ Aval Org1';
+      document.getElementById('f-pkt-exec2-txt').textContent = '✓ Aval Org2';
+      await Promise.all([
+        animateSvgPacket('f-pkt-exec1', 265, 102, 205, 102, 750, false),
+        animateSvgPacket('f-pkt-exec2', 265, 232, 205, 132, 750, false),
+      ]);
+      document.getElementById('f-line-exec1').classList.remove('flow-line-active');
+      document.getElementById('f-line-exec2').classList.remove('flow-line-active');
+
+      await waitStepIfNeeded('Fase 2: Ordenar en Raft Orderer →');
+
+      // FASE 2: ORDER (Ordenamiento Raft sin ejecución)
+      selectNode('f-orderer');
+      setPhaseBanner('Fase 2 (ORDER): Ordering Service (Raft) ordena y empaqueta el bloque sin ejecutar código...', 'purple');
+      document.getElementById('f-line-order').classList.add('flow-line-active');
+
+      await animateSvgPacket('f-pkt-order', 155, 185, 155, 370, 600, true);
+      await animateSvgPacket('f-pkt-order', 155, 370, 265, 370, 600, false);
+      document.getElementById('f-line-order').classList.remove('flow-line-active');
+
+      const nextBlock = state.fabric.blockNumber + 1;
+      appendLog('ORDER', `Ordering Service (Raft) empaquetó transacciones en el Bloque #${nextBlock}.`, 'consensus');
+
+      await waitStepIfNeeded('Fase 3: Validar MVCC y Guardar →');
+
+      // FASE 3: VALIDATE (Validación determinista + MVCC en Committer Peers)
+      selectNode('f-committer');
+      setPhaseBanner('Fase 3 (VALIDATE): Committer Peers verifican firmas de aval y versiones MVCC...', 'sky');
+      document.getElementById('f-line-val1').classList.add('flow-line-active');
+      document.getElementById('f-line-val2').classList.add('flow-line-active');
+      document.getElementById('f-pkt-val-txt').textContent = `Bloque #${nextBlock}`;
+
+      await animateSvgPacket('f-pkt-val', 505, 368, 575, 235, 950, false);
+      document.getElementById('f-line-val1').classList.remove('flow-line-active');
+      document.getElementById('f-line-val2').classList.remove('flow-line-active');
+
+      state.fabric.blockNumber = nextBlock;
+      const txHashShort = 'tx_' + Math.random().toString(16).substring(2, 7);
+
+      if (simulateMvccConflict) {
+        document.getElementById('f-mvcc-status').textContent = `✕ Conflicto MVCC: Leyó v${currentVer}, actual es v${nextVer}`;
+        document.getElementById('f-mvcc-status').setAttribute('fill', '#fb7185');
+
+        state.fabric.history.push({
+          block: nextBlock,
+          txId: txHashShort,
+          status: 'INVALID (MVCC)',
+          detail: `Doble gasto bloqueado: versión v${currentVer} ya modificada (World State intacto)`
+        });
+
+        updateSvgLabels('INV');
+        renderDatabaseInspector();
+        setPhaseBanner('CONFLICTO MVCC: Bloque #'+nextBlock+' guardado con Tx INVÁLIDA (World State protegido).', 'rose');
+        appendLog('MVCC-FAIL', `Bloque #${nextBlock} registrado, pero Tx ${txHashShort} invalidada (sin cambio en CouchDB).`, 'error');
+      } else {
+        state.fabric.asset.version = nextVer;
+        state.fabric.asset.value = newValue;
+        state.fabric.history.push({
+          block: nextBlock,
+          txId: txHashShort,
+          status: 'VALID',
+          detail: `UpdateAsset(ACT-01, $${newValue.toLocaleString()}, v${nextVer})`
+        });
+
+        updateSvgLabels();
+        renderDatabaseInspector();
+        setPhaseBanner(`Fase 3 completada: Bloque #${nextBlock} confirmado en CouchDB (Versión v${nextVer}).`, 'emerald');
+        appendLog('COMMIT', `Bloque #${nextBlock} validado. World State actualizado a v${nextVer} ($${newValue.toLocaleString()}).`, 'valid');
+      }
+
+      state.isAnimating = false;
+    }
+
+    // ==================== ATAJOS DE TECLADO PARA EXPOSICIÓN ====================
+    window.addEventListener('keydown', (e) => {
+      if (['SELECT', 'INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+
+      if (e.key === '1') {
+        switchPlatform('quorum');
+      } else if (e.key === '2') {
+        switchPlatform('fabric');
+      } else if (e.key === ' ') {
+        e.preventDefault();
+        handlePrimaryAction();
+      } else if (e.key.toLowerCase() === 'r') {
+        resetSimulation();
+      } else if (e.key === 'Escape') {
+        toggleCompareModal(false);
+      }
+    });
+
+    // ==================== INICIALIZACIÓN AL CARGAR ====================
+    window.addEventListener('DOMContentLoaded', () => {
+      updateSvgLabels();
+      selectNode('q-bankA');
+      renderCryptoInspector();
+      appendLog('SISTEMA', 'Simulador listo. Atajos: [1] Quorum, [2] Fabric, [Space] Ejecutar/Avanzar, [R] Reiniciar.', 'info');
+    });
+  </script>
+</body>
+</html>
